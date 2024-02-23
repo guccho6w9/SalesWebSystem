@@ -1,0 +1,56 @@
+
+{% extends "base.html" %}
+
+
+{% block historial_content %}
+<style>
+    .table-spaced {
+  margin-top: 20px; /* Ajusta el espacio superior según tus necesidades */
+  margin-bottom: 20px; /* Ajusta el espacio inferior según tus necesidades */
+}
+
+.table-spaced th,
+.table-spaced td {
+  padding: 10px; /* Ajusta el relleno según tus necesidades */
+}
+</style>
+
+
+  <h1>Historial de Cambios - {{ producto.cod }} </h1>
+  <br>
+  <h1> {{ producto.des }} </h1>
+  <br>
+  <h1>${{ producto.pre|floatformat:2 }}</h1>
+
+
+  <table class="table-spaced">
+
+    <thead>
+      <tr>
+        <th>Fecha y Hora</th>
+
+        <th>Código Anterior</th>
+        <th>Nombre Anterior</th>
+        <th>Precio Anterior</th>
+        <th>Actualizado </th>
+
+      </tr>
+    </thead>
+    <tbody>
+     
+      {% for cambio in historial %}
+
+
+      
+        <tr>
+          <td>{{ cambio.fecha_cambio }}</td>
+          <td>{{ cambio.cod_anterior }}</td>
+          <td>{{ cambio.nombre_anterior }}</td>
+          <td>{{ cambio.precio_anterior }}</td>
+          <td>{{ cambio.precio_actualizado }}</td>
+
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

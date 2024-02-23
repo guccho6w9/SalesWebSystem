@@ -1,0 +1,12 @@
+{% extends ".\base.html" %}
+
+{% block title %}Editar Docente{% endblock %}
+ 
+{% block body %}
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="excel_file">
+    <button type="submit">Import</button>
+</form>
+
+{% endblock %}

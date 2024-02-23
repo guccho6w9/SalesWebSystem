@@ -1,0 +1,53 @@
+{% extends ".\base.html" %}
+
+{% block title %}Editar Docente{% endblock %}
+ 
+{% block body %}
+
+<div class=""> <!--row-->
+    <div class="col-lg-5 col-md-7 col-sm-10 contenido-centrado"> <!--col-md-4 offset-md-4 py-3-->
+        <div class="text-center">
+            <h2>Edición de datos</h2>
+        </div>
+        <div class="scroll-box">
+        <div class="card bg-whitesmoke borde"> <!--vidrio-blur-->
+            <div class="card-body">
+                <form action="{% url 'editarProducto' %}" method="POST">{% csrf_token %}
+                    <div class="form-group" hidden>
+                        <input type="number" id="id_pd" name="id_pd" class="form-control-plaintext text-center" value="{{producto.id_pd}}" readonly>
+                    </div>
+                    <div class="form-group mb-1">
+                        <input type="text" autocomplete="off" id="cod"name="cod" class="form-control" value="{{producto.cod}}" placeholder="Codigo" minlength="2" maxlength="15" required>
+                    </div>
+                    <div class="form-group mb-1">
+                        <input type="text" autocomplete="off" id="des" name="des" class="form-control" value="{{producto.des}}" placeholder="Descripcion" minlength="2" maxlength="70" required>
+                    </div>
+        
+                    <div class="form-group mb-1">
+                        <input type="number" autocomplete="off" id="pre" name="pre" class="form-control" value="{{producto.pre}}" step="0.01" required>
+                    </div>
+                    
+                   
+                    <!--BOTONES-->
+                    <div class="d-grid gap-2 py-3">
+                        <button type="submit" class="btn btn-success border border-black rounded">
+                            💾 Guardar cambios
+                        </button>
+                    </div>
+                    <div class="text-center">
+                        <a class="btn btn-dark mt-3" href="{% url 'producto' %}">⬅️ Descartar cambios y regresar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div> <!--scroll-box-->
+    </div>
+    <script>
+        // Habilitar edición cuando se hace clic en el campo de descripción
+        document.getElementById('des').addEventListener('click', function() {
+            this.removeAttribute('readonly');
+        });
+    </script>
+</div>
+
+{% endblock %}
