@@ -16,6 +16,21 @@ class Producto(models.Model):
     
 
     
+from django.core.serializers.json import DjangoJSONEncoder
+
+class ProductoEncoder(DjangoJSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Producto):
+            # Convert the Producto object to a dictionary
+            return {
+                'id_pd': obj.id_pd,
+                'cod': obj.cod,
+                'des': obj.des,
+                'pre': obj.pre,
+                # Add other fields as needed
+            }
+        return super().default(obj)
+
 
 class HistorialProducto(models.Model):
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)

@@ -1,13 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import *
 from openpyxl import load_workbook
+from django.http import HttpResponse
+from openpyxl import Workbook
 import pandas as pd
 from django.contrib import messages
 from django.db.models import Q, F
+import json
+from django.forms.models import model_to_dict
+
+
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.utils.datastructures import MultiValueDictKeyError
 from .models import HistorialProducto
 from django.utils import timezone
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from django.views import View
+
+
 # DB
 from django.db.utils import IntegrityError
 from django.db.models import Case, When
@@ -168,12 +180,19 @@ def editarProducto(request):
 
 def import_from_excel(request):
     if request.method == 'POST':
-        excel_file = request.FILES['excel_file']
+
+        try:
+            excel_file = request.FILES['excel_file']
+        except MultiValueDictKeyError:
+            messages.error(request, 'No se seleccionó ningún archivo para importar.')
+            return redirect('import_from_excel')
+        
 
         # Verificar si el archivo es un archivo Excel
         if not excel_file.name.endswith('.xlsx'):
             messages.error(request, 'El archivo seleccionado no es un archivo Excel válido.')
             return redirect('import_from_excel')
+        
 
         # Procesar el archivo Excel con pandas
         try:
@@ -194,6 +213,30 @@ def import_from_excel(request):
         return render(request, 'import_form.html')
 
     return render(request, 'import_form.html')
+
+
+def exportar_productos(request):
+    # Lógica para exportar productos a un archivo Excel
+    response = HttpResponse(content_type='application/ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="productos.xlsx"'
+
+    # Crea un libro de trabajo y una hoja de cálculo
+    wb = Workbook()
+    ws = wb.active
+
+    # Agrega encabezados a la hoja de cálculo
+    ws.append(['Código', 'Descripción', 'Precio'])
+
+    # Agrega datos de productos a la hoja de cálculo
+    productos = Producto.objects.all()
+    for producto in productos:
+        ws.append([producto.cod, producto.des, producto.pre])
+
+    # Guarda el libro de trabajo en la respuesta
+    wb.save(response)
+
+    return response
+
 
 def borrarTodosProductos(request):
     Producto.objects.all().delete()
@@ -247,3 +290,58 @@ def ver_historial_producto(request, id_pd):
     print(f'id_pd recibido: {id_pd}')
 
     return render(request, 'producto/historial_producto.html', {'producto': producto, 'historial': historial})
+
+def listar_productos_seleccionados(request):
+    if request.method == 'POST':
+        try:
+            selected_products = json.loads(request.POST.get('selected_products', '[]'))
+            selected_products = [int(id_pd) for id_pd in selected_products]
+            selected_products = Producto.objects.filter(id_pd__in=selected_products)
+
+            # Save the list of dictionaries in the session
+            request.session['selected_products'] = list(selected_products.values())
+
+            return render(request, 'listar_productos_seleccionados.html', {'selected_products': selected_products})
+        except ValueError:
+            # Handle the case where the JSON decoding fails
+            messages.error(request, 'Error al cargar los productos seleccionados.')
+            return render(request, 'listar_productos_seleccionados.html', {'selected_products': []})
+
+    # Load the selected products from the session
+    selected_products = request.session.get('selected_products', [])
+    
+    return render(request, 'listar_productos_seleccionados.html', {'selected_products': selected_products})
+
+
+
+def quitar_producto_seleccionado(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+
+        # Obtener la lista actual de productos seleccionados desde la sesión
+        selected_products = request.session.get('selected_products', [])
+        print("Selected Products in Session before removal:", selected_products)
+
+        try:
+            # Convertir el product_id a int
+            product_id = int(product_id)
+            print("producto a eliminar antes del if:", product_id)
+
+            # Obtener el producto correspondiente al product_id
+            producto_to_remove = get_object_or_404(Producto, id_pd=product_id)
+
+            # Asegurarse de que el producto esté en la lista antes de intentar eliminarlo
+            if any(prod['id_pd'] == product_id for prod in selected_products):
+                print("producto a eliminar en el if:", product_id)
+
+                # Quitar el producto de la lista
+                selected_products = [prod for prod in selected_products if prod['id_pd'] != product_id]
+
+                # Guardar la lista actualizada en la sesión
+                print("Selected Products in Session after removal:", selected_products)
+                request.session['selected_products'] = selected_products
+        except (ValueError, KeyError):
+            pass
+
+    return redirect('listar_productos_seleccionados')
+

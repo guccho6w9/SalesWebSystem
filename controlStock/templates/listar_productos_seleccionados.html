@@ -1,0 +1,33 @@
+{% extends ".\base.html" %}
+
+{% block title %}Productos Seleccionados{% endblock %}
+
+{% block body %}
+    <h1>Productos Seleccionados</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Codigo</th>
+                <th>Descripcion</th>
+                <th>Precio</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in selected_products %}
+                <tr>
+                    <td>{{ p.cod }}</td>
+                    <td>{{ p.des }}</td>
+                    <td>{{ p.pre }}</td>
+                    <td>
+                        <form method="post" action="{% url 'quitar_producto_seleccionado' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ p.id_pd }}">
+                            <button type="submit" class="btn btn-danger">Quitar</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

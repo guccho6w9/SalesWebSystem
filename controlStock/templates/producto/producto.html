@@ -29,15 +29,26 @@
 
         margin-top: 3rem; /* Puedes ajustar este valor según sea necesario */
     }
+    /* Estilo para los botones de ordenar */
+th.col.txt-datos.txt-centrado a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.5rem; /* Ajusta el padding según sea necesario */
+}
+
+/* Ajustar el ancho de los botones en el encabezado de la tabla */
+th.col.txt-datos.txt-centrado {
+    width: 10%; /* Puedes ajustar el ancho según sea necesario */
+}
+
+/* Estilo para los botones de acciones en la tabla */
+.btn-group.dropstart .btn-primary.btn-sm,
+.btn-group.dropstart .dropdown-menu.text-center.cuerpo-menu-opciones {
+    width: auto;
+}
 
 
-    .btn-borrar-importados {
-        position: absolute;
-        top: 0;
-
-        margin-top: 3rem; /* Puedes ajustar este valor según sea necesario */
-
-    }
     </style>
     
     
@@ -50,10 +61,28 @@
 
 
 
-<!-- Agregar el botón para borrar archivos -->
-<button type="button" class="btn btn-danger btn-borrar-importados position-absolute top-0 start-50 translate-middle-x mt-3" data-bs-toggle="modal" data-bs-target="#modalBorrarImportados">
-    Borrar Todo
-</button>
+
+<div class="row">
+    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4"> 
+        <!-- Reistrar Producto --> 
+        <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-primary btn-registrar-nuevo" data-bs-toggle="modal" data-bs-target="#ModalFormulario">
+                Registrar Nuevo Producto
+            </button>
+        
+            <form action="{% url 'listar_productos_seleccionados' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="selected_products" id="selected_products">
+                <button type="submit" class="btn btn-success" id="CarroProducto">Productos Seleccionados</button>
+            </form>
+        
+            <!-- Agregar el botón para borrar archivos -->
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalBorrarImportados">
+                Borrar Todo
+            </button>
+        </div>
+        
+
 
 <!-- Modal para confirmar borrado de archivos importados -->
 <div class="modal fade" id="modalBorrarImportados" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -75,26 +104,6 @@
         </div>
     </div>
 </div>
-
-<!-- VISUALIZACION MENSAJES -->
-<div class=""> <!--col-->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-docente {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible" role="alert">
-                <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                <strong>{{ message }}</strong>
-            </div>
-        {% endfor %}
-    {% endif %}
-</div>
-
-<div class="row">
-    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4"> 
-        <!-- Reistrar Producto --> 
-        <button type="button" class="btn btn-primary btn-registrar-nuevo position-absolute top-0 end-0 mt-3" data-bs-toggle="modal" data-bs-target="#ModalFormulario">
-            Registrar Nuevo Producto
-        </button>
-        
 
             <!-- Formulario para registro de datos -->
             <div class="modal fade" id="ModalFormulario" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -128,6 +137,23 @@
     </div>    
 </div>
 
+
+
+
+<!-- VISUALIZACION MENSAJES -->
+<div class=""> <!--col-->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-docente {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible" role="alert">
+                <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <strong>{{ message }}</strong>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+
+
 <div class="">
     <div class="row">
         <div class="col-lg">
@@ -141,16 +167,17 @@
             <input type="hidden" name="order_by" value="{{ order_by }}">
             <input type="hidden" name="direction" value="{{ direction }}">
         <!-- CUADRO DE BUSQUEDA-->
-
-<div class="col-lg-4 mt-2"> <!-- Aumenté el tamaño a col-lg-4 -->
-    <form id="miFormulario" method="GET" action="{% url 'producto' %}">
-        <div class="input-group mb-3">
-            <input type="text" id="cuadro-busqueda" name="q" class="form-control" placeholder="🔎 Buscar por nombre" style="border-top-right-radius: 0; border-bottom-right-radius: 0; width: 80%; margin-right: 0;">
-            <button id="botonBuscar" class="btn btn-primary" type="button">Buscar</button>
-            <input id="botonBorrar" type="reset" class="btn btn-secondary" value="Limpiar">
+        <div class="col-sm-12 col-md-6 col-lg-8 ms-auto">
+            <form id="miFormulario" method="GET" action="{% url 'producto' %}">
+                <div class="input-group mb-3">
+                    <input type="text" id="cuadro-busqueda" name="q" class="form-control" placeholder="🔎 Buscar por nombre" style="border-top-right-radius: 0; border-bottom-right-radius: 0; width: 80%; margin-right: 0;">
+                    <button class="btn btn-primary" type="submit">Buscar</button>
+                    <input type="reset" class="btn btn-secondary" value="Limpiar">
+                </div>
+            </form>
         </div>
-    </form>
-</div>
+
+
 
 </form>
 
@@ -180,15 +207,14 @@
 
 
     </div>
-    <div class="table-responsive"> <!--COMIENZO TABLA-->
+    <div class="table-responsive"> <!-- COMIENZO TABLA -->
         <div id="scrollArea" class="scroll-box">
             <table class="table table-striped" id="tabla-registros">
                 <thead>
-                     <tr>
+                    <tr>
+                        <th class="col txt-datos txt-centrado">Agregar</th>
                         <th class="col txt-datos txt-centrado">#</th>
-                      
                         <th class="col txt-datos txt-centrado" hidden>ID Producto</th>
-                        
                         <th class="col txt-datos txt-centrado"> Codigo</th>
                         <th class="col txt-datos txt-centrado">Descripcion</th>
                         <th class="col txt-datos txt-centrado">Ajuste</th>
@@ -199,17 +225,17 @@
                 </thead>
                 <tbody id="contentArea" class="table-group-divider border-light">
                     {% for p in productos %}
-                    <!-- <tr id="registro" data-codigo="{{ p.cod | lower }}"> -->
+                    <tr>
+                        <td class="txt-datos txt-centrado">
+                            <input type="checkbox" name="seleccionados" value="{{ p.id_pd }}">
+                        </td>
                         <td class="txt-datos txt-centrado">{{ p.index }}</td>
-
-
                         <td class="txt-datos txt-centrado" hidden>{{p.id_pd}}</td>
                         <td class="txt-datos txt-centrado">{{p.cod}}</td>
                         <td class="txt-datos txt-centrado">{{p.des}}</td>
                         <td class="txt-datos txt-centrado">{{p.aju}}</td>
                         <td class="txt-datos txt-centrado">{{p.ofe}}</td>
                         <td class="txt-datos txt-centrado">{{p.pre}}</td>
-                        
                         <td class="txt-centrado">
                             <div class="btn-group dropstart">
                                 <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
@@ -404,6 +430,31 @@
         });
     });
 </script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
+        const selectedProductsInput = document.getElementById('selected_products');
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', function () {
+                updateSelectedProducts();
+            });
+        });
+
+        function updateSelectedProducts() {
+            const selectedProducts = Array.from(checkboxes)
+                .filter((checkbox) => checkbox.checked)
+                .map((checkbox) => parseInt(checkbox.value, 10)); // Convert to integers
+
+            selectedProductsInput.value = JSON.stringify(selectedProducts);
+        }
+    });
+</script>
+
+
+
 
 
                     

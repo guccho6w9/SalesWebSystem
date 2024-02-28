@@ -1,12 +1,25 @@
 {% extends ".\base.html" %}
 
-{% block title %}Editar Docente{% endblock %}
+{% block title %}Importar/exportar{% endblock %}
  
 {% block body %}
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="file" name="excel_file">
-    <button type="submit">Import</button>
-</form>
+<div class="container mt-4">
+    <h2>Importar y Exportar Productos</h2>
 
+    <form method="post" enctype="multipart/form-data" class="mt-3">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="excel_file" class="form-label">Seleccionar archivo Excel:</label>
+            <input type="file" name="excel_file" class="form-control" id="excel_file">
+        </div>
+        <button type="submit" class="btn btn-primary">Importar</button>
+    </form>
+
+    <!-- Nuevo botón para exportar productos -->
+    <div class="mt-4">
+        <a href="{% url 'exportar_productos' %}" class="btn btn-success">Exportar Productos</a>
+    </div>
+</div>
 {% endblock %}
+
+
