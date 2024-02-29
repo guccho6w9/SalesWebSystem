@@ -18,8 +18,48 @@
     <!-- Nuevo botón para exportar productos -->
     <div class="mt-4">
         <a href="{% url 'exportar_productos' %}" class="btn btn-success">Exportar Productos</a>
+
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalBorrarImportados">
+            Borrar Todo
+        </button>
     </div>
+
+    
 </div>
+
+
+
+<div class="modal fade" id="modalBorrarImportados" tabindex="-1" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content bg-whitesmoke">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="exampleModalLabel">Borrar Archivos Importados</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            Esta acción no se puede deshacer. ¿Está seguro de borrar todos los archivos importados?
+                        </p>
+                    </div>
+                    <div class="modal-footer justify-content-around">
+                        <button type="button" class="btn btn-secondary px-5" data-bs-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-danger" id="confirmarBorrado">Sí</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Asociar la función de confirmar borrado al botón correspondiente
+                document.getElementById('confirmarBorrado').addEventListener('click', function () {
+                    // Redirigir a la vista que borra todos los productos
+                    window.location.href = "{% url 'borrar_todos_productos' %}";
+                });
+            });
+        </script>
+
 {% endblock %}
 
 

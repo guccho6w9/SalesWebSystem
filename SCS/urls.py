@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from controlStock import views
 from controlStock.views import import_from_excel
-from controlStock.views import aumentar_precio, listar_productos, ver_historial_producto, listar_productos_seleccionados, quitar_producto_seleccionado
+from controlStock.views import aumentar_precio, listar_productos, ver_historial_producto, listar_productos_seleccionados, quitar_producto_seleccionado, limpiar_productos_seleccionados, ajustar_precio_seleccionados
 
 
 """
@@ -45,6 +45,8 @@ urlpatterns = [
     path('exportar-productos/', views.exportar_productos, name='exportar_productos'),
     path('listar_productos_seleccionados/', listar_productos_seleccionados, name='listar_productos_seleccionados'),
     path('quitar_producto_seleccionado/', quitar_producto_seleccionado, name='quitar_producto_seleccionado'),
+    path('limpiar_productos_seleccionados/', views.limpiar_productos_seleccionados, name='limpiar_productos_seleccionados'),
+    path('ajustar_precio_seleccionados/', views.ajustar_precio_seleccionados, name='ajustar_precio_seleccionados'),
  
     # Otras URLs de tu aplicación
     

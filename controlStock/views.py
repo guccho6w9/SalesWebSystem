@@ -225,7 +225,7 @@ def exportar_productos(request):
     ws = wb.active
 
     # Agrega encabezados a la hoja de cálculo
-    ws.append(['Código', 'Descripción', 'Precio'])
+    ws.append(['cod', 'des', 'pre', 'aju', 'ofe'])
 
     # Agrega datos de productos a la hoja de cálculo
     productos = Producto.objects.all()
@@ -344,4 +344,54 @@ def quitar_producto_seleccionado(request):
             pass
 
     return redirect('listar_productos_seleccionados')
+
+
+def limpiar_productos_seleccionados(request):
+    # Limpiar la lista de productos seleccionados en la sesión
+    request.session.pop('selected_products', None)
+
+    # Redirigir a la página principal de productos
+    return redirect('producto')
+
+
+def ajustar_precio_seleccionados(request):
+    if request.method == 'POST':
+        try:
+            selected_products = request.session.get('selected_products', [])
+            porcentaje = float(request.POST.get('porcentaje', 0))
+
+            for product in selected_products:
+                id_pd = product['id_pd']
+                producto = Producto.objects.get(id_pd=id_pd)
+
+                # Guarda el cambio en el historial
+                HistorialProducto.objects.create(
+                    producto=producto,
+                    cod_anterior=producto.cod,
+                    nombre_anterior=producto.des,
+                    id_anterior=producto.id_pd,
+                    precio_anterior=producto.pre,
+                    precio_actualizado=round(producto.pre * (1 + porcentaje / 100), 2),
+                    fecha_cambio=timezone.now()
+                )
+
+                # Ajusta el precio del producto
+                producto.pre = round(producto.pre * (1 + porcentaje / 100), 2)
+                producto.save()
+
+                # Actualiza el precio en la lista de productos seleccionados en la sesión
+                product['pre'] = producto.pre
+
+            messages.success(request, f"¡Precios ajustados en {porcentaje}% para todos los productos seleccionados!")
+
+            # Guardar la lista actualizada en la sesión
+            request.session['selected_products'] = selected_products
+
+            return render(request, 'listar_productos_seleccionados.html', {'selected_products': selected_products})
+        except ValueError:
+            messages.error(request, 'Porcentaje inválido. Ingrese un número válido.')
+
+    # Redirige a la página principal de productos si ocurre algún error
+    return redirect('listar_productos_seleccionados')
+
 
