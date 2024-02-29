@@ -423,35 +423,45 @@ th.col.txt-datos.txt-centrado {
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Asociar la función de limpiar al botón correspondiente
-        document.getElementById('botonBorrar').addEventListener('click', function () {
-            // Redirigir a la misma página sin el parámetro de búsqueda
-            window.location.href = "{% url 'producto' %}";
+    const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
+    const selectedProductsInput = document.getElementById('selected_products');
+
+    // Recuperar productos seleccionados almacenados en localStorage
+    const storedSelectedProducts = localStorage.getItem('selectedProducts');
+    const selectedProducts = storedSelectedProducts ? JSON.parse(storedSelectedProducts) : [];
+
+    // Marcar las casillas según los productos seleccionados almacenados
+    checkboxes.forEach((checkbox) => {
+        const productId = parseInt(checkbox.value, 10);
+        checkbox.checked = selectedProducts.includes(productId);
+    });
+
+    checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', function () {
+            updateSelectedProducts();
         });
     });
-</script>
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
-        const selectedProductsInput = document.getElementById('selected_products');
-
+    function updateSelectedProducts() {
         checkboxes.forEach((checkbox) => {
-            checkbox.addEventListener('change', function () {
-                updateSelectedProducts();
-            });
+            const productId = parseInt(checkbox.value, 10);
+            if (checkbox.checked && !selectedProducts.includes(productId)) {
+                selectedProducts.push(productId);
+            } else if (!checkbox.checked && selectedProducts.includes(productId)) {
+                selectedProducts.splice(selectedProducts.indexOf(productId), 1);
+            }
         });
 
-        function updateSelectedProducts() {
-            const selectedProducts = Array.from(checkboxes)
-                .filter((checkbox) => checkbox.checked)
-                .map((checkbox) => parseInt(checkbox.value, 10)); // Convert to integers
+        // Almacenar productos seleccionados en localStorage
+        localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
 
-            selectedProductsInput.value = JSON.stringify(selectedProducts);
-        }
-    });
+        // Actualizar el valor del campo oculto
+        selectedProductsInput.value = JSON.stringify(selectedProducts);
+    }
+});
+
 </script>
+
 
 
 
