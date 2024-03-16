@@ -14,44 +14,61 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
     <!-- Agrega esto al principio de tu template antes del contenido principal -->
+    <style>
+        .bg-custom-color {
+            background-color: #437C90;
+
+            /* Color personalizado */
+            @media print {
+                #printPageButton {
+                    display: none;
+                }
+
+                @media print {
+                    .noprint {
+                        display: none !important;
+                    }
+                }
+            }
+        }
+
+        .header-logo {
+            max-width: 30%;
+            /* Ajusta el ancho máximo de la imagen al tamaño del contenedor */
+
+            /* La altura se ajustará automáticamente para mantener la proporción */
+        }
+    </style>
 
 
 </head>
 
 <body>
-    <div class="container">
+    <div class="container-fluid px-0">
         <!-- Encabezado -->
-        <header class="bg-primary text-white p-3 mb-3">
+        <header class="bg-custom-color text-white p-3 mb-3">
             <div class="row">
-                <div class="col-8">
-                    <h1 class="text-start">Logo</h1>
-                    <p class="text-start">Descripción</p>
+                <div class="col-8 d-flex align-items-center justify-content-between">
+                    <!-- Logo -->
+                    <img src="{% static 'images/logo_header.png' %}" alt="Logo" class="header-logo">
+                    
+                    <!-- Botones -->
+                
+                    {% block productos_buttons %}{% endblock %}
+                  
+                    
                 </div>
                 <div class="col-4 text-end">
                     <!-- Botones -->
+
                     <div class="btn-group">
-                        <a href="{% url 'import_from_excel' %}" class="btn btn-light">Ir a Importación</a>
-                        <a href="{% url 'producto' %}" class="btn btn-light">Ir a Productos</a>
+                        <a href="{% url 'import_from_excel' %}" id="noprint" class="btn btn-light">Ir a Importación</a>
+                        <a href="{% url 'producto' %}" id="noprint" class="btn btn-light">Ir a Productos</a>
                     </div>
                 </div>
             </div>
         </header>
-        {% if messages %}
-    <div class="alert alert-dismissible fade show" role="alert">
-        <ul class="messages">
-            {% for message in messages %}
-                {% if message.tags %}
-                    <li class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% endif %}">
-                        {{ message }}
-                    </li>
-                {% else %}
-                    <li>{{ message }}</li>
-                {% endif %}
-            {% endfor %}
-        </ul>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-{% endif %}
+
 
 
 
@@ -63,11 +80,13 @@
             {% block body %}{% endblock %}
         </div>
 
-        <!-- Footer -->
-        <footer class="mt-5">
-            <p class="text-center">A.Q 2024 | gusta.quiroga033@gmail.com</p>
-        </footer>
+
     </div>
+
+    <!-- Footer -->
+    <footer id="noprint" class="mt-5">
+        <p id="noprint" class="text-center">A.Q 2024 | gusta.quiroga033@gmail.com</p>
+    </footer>
 
 
     <!--Bootstrap-->

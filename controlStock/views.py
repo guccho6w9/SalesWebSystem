@@ -8,7 +8,9 @@ from django.contrib import messages
 from django.db.models import Q, F
 import json
 from django.forms.models import model_to_dict
-
+from django.utils.translation import activate
+from num2words import num2words
+from django.template.loader import get_template
 
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -18,8 +20,9 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.views import View
-
-
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 # DB
 from django.db.utils import IntegrityError
 from django.db.models import Case, When
@@ -74,7 +77,7 @@ def producto(request):
     elif order_by == 'pre':
         all_products = all_products.order_by('-pre' if direction == 'desc' else 'pre')
 
-    paginator = Paginator(all_products, 150)
+    paginator = Paginator(all_products, 200)
     page = request.GET.get('page')
 
     try:
@@ -104,14 +107,20 @@ def listar_productos(request):
 
 def registrarProducto(request):
     if request.method == 'GET':
-        return render(request, 'producto\\producto.html')
+        return render(request, 'producto/producto.html')
     else:
-        cod = request.POST['cod']  # Convertir a mayúsculas
+        cod = request.POST['cod'].upper()  # Convertir a mayúsculas
         des = request.POST['des'].upper()
         pre = request.POST['pre']
+        stock = request.POST['stock']
         try:
-            producto = Producto.objects.create(cod=cod, des=des, pre=pre)
-            messages.success(request, '¡Registrado!')
+            # Verificar si ya existe un producto con el mismo código
+            if Producto.objects.filter(cod=cod).exists():
+                messages.error(request, '¡Ya existe un Producto con ese Codigo!')
+            else:
+                # Si no existe, crear el nuevo producto
+                producto = Producto.objects.create(cod=cod, des=des, pre=pre, stock=stock)
+                messages.success(request, '¡Registrado!')
         except IntegrityError as e:
             messages.error(request, '¡Ya existe un Producto con ese Codigo!')
         except Exception as e:
@@ -144,6 +153,7 @@ def editarProducto(request):
             cod = request.POST['cod']
             des = request.POST['des']
             pre = request.POST['pre']
+            stock = request.POST['stock']
 
             # Obtén el producto antes de modificarlo
             producto = get_object_or_404(Producto, id_pd=id_pd)
@@ -163,6 +173,7 @@ def editarProducto(request):
             producto.cod = cod
             producto.des = des
             producto.pre = pre
+            producto.stock = stock
             producto.save()
 
             messages.success(request, '¡Datos actualizados y cambio registrado en el historial!')
@@ -187,23 +198,22 @@ def import_from_excel(request):
             messages.error(request, 'No se seleccionó ningún archivo para importar.')
             return redirect('import_from_excel')
         
-
         # Verificar si el archivo es un archivo Excel
         if not excel_file.name.endswith('.xlsx'):
             messages.error(request, 'El archivo seleccionado no es un archivo Excel válido.')
             return redirect('import_from_excel')
         
-
         # Procesar el archivo Excel con pandas
         try:
             df = pd.read_excel(excel_file)
             for index, row in df.iterrows():
+                # Redondear el valor del precio a dos decimales
+                pre = round(float(row['pre']), 2)
                 Producto.objects.create(
                     cod=row['cod'],
                     des=row['des'],
-                    pre=float(row['pre']),
-                    aju=row['aju'],
-                    ofe=row['ofe']
+                    pre=pre,
+                    stock=int(row.get('stock', 0))
                 )
             messages.success(request, 'Importación exitosa.')
         except Exception as e:
@@ -225,12 +235,12 @@ def exportar_productos(request):
     ws = wb.active
 
     # Agrega encabezados a la hoja de cálculo
-    ws.append(['cod', 'des', 'pre', 'aju', 'ofe'])
+    ws.append(['cod', 'des', 'pre', 'stock'])
 
     # Agrega datos de productos a la hoja de cálculo
     productos = Producto.objects.all()
     for producto in productos:
-        ws.append([producto.cod, producto.des, producto.pre])
+        ws.append([producto.cod, producto.des, producto.pre, producto.stock])
 
     # Guarda el libro de trabajo en la respuesta
     wb.save(response)
@@ -290,6 +300,9 @@ def ver_historial_producto(request, id_pd):
     print(f'id_pd recibido: {id_pd}')
 
     return render(request, 'producto/historial_producto.html', {'producto': producto, 'historial': historial})
+
+
+
 
 def listar_productos_seleccionados(request):
     if request.method == 'POST':
@@ -392,6 +405,136 @@ def ajustar_precio_seleccionados(request):
             messages.error(request, 'Porcentaje inválido. Ingrese un número válido.')
 
     # Redirige a la página principal de productos si ocurre algún error
-    return redirect('listar_productos_seleccionados')
+    return redirect('producto')
 
+
+def agregar_producto_facturacion(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        cantidad = int(request.POST.get('cantidad'))
+        producto = Producto.objects.get(pk=product_id)
+        
+        factura_existente = FacturaProducto.objects.filter(producto=producto).first()
+        
+        if factura_existente:
+            factura_existente.cantidad = F('cantidad') + cantidad
+            factura_existente.save()
+        else:
+            factura_producto = FacturaProducto(producto=producto, cantidad=cantidad)
+            factura_producto.save()
+        
+        messages.success(request, f"Se ha agregado {cantidad} {producto.des} a la factura.")
+        
+        return redirect(request.META.get('HTTP_REFERER', 'producto'))
+       
+    
+def mostrar_carrito_productos(request):
+    factura_productos = FacturaProducto.objects.all()
+    total = sum(item.subtotal() for item in factura_productos)
+    total_en_palabras = convertir_precio_a_palabras(total)
+    productos = Producto.objects.all()
+
+    return render(request, 'producto/carrito_productos.html', {'factura_productos': factura_productos, 'total': total, 'total_en_palabras': total_en_palabras,'fecha_actual': timezone.now(), 'productos': productos})
+
+def eliminar_producto_factura(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        print("ID del producto:", product_id)  # Agrega esta línea para imprimir el valor del ID
+        try:
+            producto = Producto.objects.get(cod=product_id)
+            factura_producto = FacturaProducto.objects.get(producto=producto)
+            factura_producto.delete()
+            messages.success(request, f"Se ha eliminado {producto.des} de la factura.")
+        except (Producto.DoesNotExist, FacturaProducto.DoesNotExist):
+            messages.error(request, "Producto no encontrado en la factura.")
+    
+    return redirect('mostrar_carrito_productos')
+
+def eliminar_productos_factura(request):
+    if request.method == 'POST':
+        # Eliminar todos los productos de la factura
+        FacturaProducto.objects.all().delete()
+        
+        # Redirigir de vuelta a la página de productos
+        return redirect('producto')
+
+    # Si no es una solicitud POST, redirigir a alguna página de error o de inicio
+    return redirect('inicio')
+
+def ir_inicio(request):
+    return render(request, 'producto/producto.html')
+
+def carrito_productos(request):
+    # Obtener los productos seleccionados de la sesión
+
+        return render(request, 'producto/carrito_productos.html')
+
+
+def convertir_precio_a_palabras(precio):
+    activate('es')  # Activa el idioma español para la conversión
+
+    # Dividir el precio en la parte entera y decimal
+    parte_entera = int(precio)
+    parte_decimal = round(precio - parte_entera, 2)
+
+    # Convertir la parte entera a palabras
+    parte_entera_palabras = num2words(parte_entera, lang='es')
+
+    # Convertir la parte decimal a palabras, limitando a dos decimales
+    if parte_decimal > 0:
+        parte_decimal_palabras = 'con ' + num2words(int(parte_decimal * 100), lang='es') + ' centavos'
+    else:
+        parte_decimal_palabras = ''
+
+    # Combinar las partes en una frase
+    if parte_decimal_palabras:
+        total_en_palabras = f"{parte_entera_palabras} pesos {parte_decimal_palabras}"
+    else:
+        total_en_palabras = f"{parte_entera_palabras} pesos"
+
+    return total_en_palabras
+
+
+def agregar_datos_cliente(request):
+    if request.method == 'POST':
+        cliente = Cliente(
+            nombre=request.POST['cliente'],
+            domicilio=request.POST['domicilio'],
+            ciudad=request.POST['ciudad'],
+            condicion_venta=request.POST['condicion_venta'],
+            condicion_fiscal=request.POST['condicion_fiscal'],
+            cuit_dni=request.POST['cuit_dni'],
+            fecha_vencimiento_pago=request.POST['fecha_vencimiento_pago']
+        )
+        cliente.save()
+        return render(request, 'producto/producto.html')  # Renderiza una plantilla de éxito, puedes ajustarlo según tus necesidades
+    else:
+        return redirect('producto/producto.html')  # Si no es una solicitud POST, redirige a la página correspondiente
+    
+def ingreso_stock_seleccionado(request):
+    if request.method == 'POST':
+        try:
+            selected_products = request.session.get('selected_products', [])
+            cantidad = int(request.POST.get('cantidad', 0))
+
+            for product in selected_products:
+                producto = Producto.objects.get(id_pd=product['id_pd'])
+                print("LA CANTIDAD:", producto.stock, cantidad)
+                producto.stock += cantidad
+                producto.save()
+
+                # Actualizar la cantidad en la lista de productos seleccionados en la sesión
+                product['stock'] = producto.stock
+
+            messages.success(request, f"¡Stock aumentado en {cantidad} unidades para todos los productos seleccionados!")
+
+            # Guardar la lista actualizada en la sesión
+            request.session['selected_products'] = selected_products
+
+            return render(request, 'listar_productos_seleccionados.html', {'selected_products': selected_products})
+        except ValueError:
+            messages.error(request, 'Cantidad inválida. Ingrese un número válido.')
+
+    # Redirige a la página principal de productos si ocurre algún error
+    return redirect('producto')
 

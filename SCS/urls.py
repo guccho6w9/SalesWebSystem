@@ -44,6 +44,16 @@ urlpatterns = [
     path('ver_historial/<int:id_pd>/', ver_historial_producto, name='ver_historial_producto'),
     path('exportar-productos/', views.exportar_productos, name='exportar_productos'),
     path('listar_productos_seleccionados/', listar_productos_seleccionados, name='listar_productos_seleccionados'),
+    path('agregar_producto_facturacion/', views.agregar_producto_facturacion, name='agregar_producto_facturacion'),
+    path('carrito_productos/', views.carrito_productos, name='carrito_productos'),
+    path('ir_inicio/', views.ir_inicio, name='ir_inicio'),
+    path('eliminar_productos_factura/', views.eliminar_productos_factura, name='eliminar_productos_factura'),
+    path('mostrar_carrito_productos/', views.mostrar_carrito_productos, name='mostrar_carrito_productos'),
+    path('agregar_datos_cliente/', views.agregar_datos_cliente, name='agregar_datos_cliente'),
+    path('eliminar_producto_factura/', views.eliminar_producto_factura, name='eliminar_producto_factura'),
+    path('ingreso_stock_seleccionado/', views.ingreso_stock_seleccionado, name='ingreso_stock_seleccionado'),
+
+
     path('quitar_producto_seleccionado/', quitar_producto_seleccionado, name='quitar_producto_seleccionado'),
     path('limpiar_productos_seleccionados/', views.limpiar_productos_seleccionados, name='limpiar_productos_seleccionados'),
     path('ajustar_precio_seleccionados/', views.ajustar_precio_seleccionados, name='ajustar_precio_seleccionados'),

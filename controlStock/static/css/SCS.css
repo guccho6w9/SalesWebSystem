@@ -3,6 +3,10 @@
     border-radius: 10px;
 }
 
+.bg-custom-color {
+  background-color: #437C90; /* Color personalizado */
+}
+
 .table-spaced {
   margin-top: 20px; /* Ajusta el espacio superior según tus necesidades */
   margin-bottom: 20px; /* Ajusta el espacio inferior según tus necesidades */

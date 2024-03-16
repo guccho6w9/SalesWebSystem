@@ -13,6 +13,60 @@
 
 
 <style>
+    .custom-color {
+        background-color: #437C90;
+    }
+
+    .btn-registrar-nuevo {
+        margin-top: 1rem;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .alert-success {
+        background-color: #d1e7dd;
+        border-color: #badbcc;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    /* Estilo para el cuadro de búsqueda */
+    #cuadro-busqueda {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        width: 80%;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+
+
     #cuadro-busqueda {
         width: 100%;
         /* Ajusta el ancho del cuadro de búsqueda */
@@ -49,8 +103,10 @@
     }
 
     td.txt-datos.txt-centrado input[type="checkbox"] {
-        transform: scale(1.5); /* Ajusta el valor según sea necesario para aumentar el tamaño */
-        margin-right: 5px; /* Ajusta el margen según sea necesario */
+        transform: scale(1.5);
+        /* Ajusta el valor según sea necesario para aumentar el tamaño */
+        margin-right: 5px;
+        /* Ajusta el margen según sea necesario */
     }
 
 
@@ -59,6 +115,11 @@
     .btn-group.dropstart .dropdown-menu.text-center.cuerpo-menu-opciones {
         width: auto;
     }
+
+    .custom-input {
+        width: 10px;
+        /* Puedes ajustar este valor según tu preferencia */
+    }
 </style>
 
 
@@ -66,35 +127,30 @@
 {% endblock %}
 {% endcomment %}
 
-{% block body %}
-
-
-
-
 
 <div class="row">
-    <div class="col-sm-12 col-md-6 col-lg-4 col-xl-4">
-        <!-- Reistrar Producto -->
-        <div class="d-flex justify-content-between">
-            <button type="button" class="btn btn-primary btn-registrar-nuevo" data-bs-toggle="modal"
+
+
+    {% block productos_buttons %}
+    <div class="col-sm-12 col-md-8 col-lg-6 col-xl-6">
+        <!-- Registrar Producto -->
+        <div class="btn-group btn-group-toggle">
+            <button type="button" class="btn btn-light custom-button" data-bs-toggle="modal"
                 data-bs-target="#ModalFormulario">
                 Registrar Producto
             </button>
-
+        
             <form action="{% url 'listar_productos_seleccionados' %}" method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="selected_products" id="selected_products">
-                <button type="submit" class="btn btn-success" id="CarroProducto">Ir a Prod. Seleccionados</button>
+                <button type="submit" class="btn btn-light custom-button" id="CarroProducto">Ajuste Precio/Stock</button>
             </form>
-
-            <!-- Agregar el botón "Deseleccionar" -->
-            <button type="button" class="btn btn-warning" id="DeseleccionarProductos">Deseleccionar productos</button>
-
+        
+            <form method="POST" action="{% url 'mostrar_carrito_productos' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-light custom-button">Generar Factura</button>
+            </form>
         </div>
-
-
-
-    
 
         <!-- Formulario para registro de datos -->
         <div class="modal fade" id="ModalFormulario" tabindex="-1" aria-labelledby="exampleModalLabel"
@@ -113,7 +169,7 @@
                             </div>
                             <div class="form-group mb-1">
                                 <input type="text" autocomplete="off" id="des" name="des" class="form-control"
-                                    placeholder="Descripcion" minlength="2" maxlength="30" required>
+                                    placeholder="Descripcion" minlength="2" maxlength="50" required>
                             </div>
 
                             <div class="form-group mb-1">
@@ -122,8 +178,12 @@
                                     oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
                                     maxlength="15" required>
                             </div>
+                            <div class="form-group mb-1">
+                                <input type="number" autocomplete="off" id="stock" name="stock" class="form-control"
+                                    placeholder="Stock" required>
+                            </div>
                             <div class="d-grid gap-2 pt-3">
-                                <button type="submit" class="btn border border-black rounded boton-r">
+                                <button type="submit" class="btn btn-light border border-dark rounded boton-r">
                                     Registrar
                                 </button>
                             </div>
@@ -133,54 +193,73 @@
             </div>
         </div>
     </div>
+    {% endblock %}
+
+
+
+</div>
+
+{% block body %}
 
 
 
 
-    <!-- VISUALIZACION MENSAJES -->
-    <div class=""> <!--col-->
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-docente {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible"
-            role="alert">
-            <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            <strong>{{ message }}</strong>
+
+
+
+
+<div class="justify-content-center">
+    <form id="miFormulario" method="GET" action="{% url 'producto' %}" class="mb-3">
+        <div class="input-group">
+            <input type="text" id="cuadro-busqueda" name="q" class="form-control" placeholder="🔎 Buscar por nombre"
+                style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+            <button class="btn btn-primary" type="submit">Buscar</button>
+
         </div>
-        {% endfor %}
-        {% endif %}
+    </form>
+</div>
+<br>
+<!-- VISUALIZACION MENSAJES -->
+<div class=""> <!--col-->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-docente {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% elif message.tags == 'info' %}alert-info{% endif %} alert-dismissible"
+        role="alert">
+        <button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <strong>{{ message }}</strong>
     </div>
+    {% endfor %}
+    {% endif %}
+</div>
 
 
 
-    <div class="">
-        <div class="row">
-            <div class="col-lg">
-                <h1>Productos Registrados</h1>
+
+
+<div class="">
+    <div class="row">
+        <div class="col-lg">
+        </div>
+
+
+
+
+        <form id="filtroFormulario" method="GET" action="{% url 'producto' %}">
+            <!-- Agrega campos ocultos para el orden actual -->
+            <input type="hidden" name="order_by" value="{{ order_by }}">
+            <input type="hidden" name="direction" value="{{ direction }}">
+            <!-- CUADRO DE BUSQUEDA-->
+
+
+
+
+        </form>
+        <div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-secondary btn-sm" id="SeleccionarTodos"> Sel.Todos</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="DeseleccionarProductos">Des.Todos</button>
+
             </div>
-
-
-
-            <form id="filtroFormulario" method="GET" action="{% url 'producto' %}">
-                <!-- Agrega campos ocultos para el orden actual -->
-                <input type="hidden" name="order_by" value="{{ order_by }}">
-                <input type="hidden" name="direction" value="{{ direction }}">
-                <!-- CUADRO DE BUSQUEDA-->
-                <div class="col-sm-12 col-md-6 col-lg-8 ms-auto">
-                    <form id="miFormulario" method="GET" action="{% url 'producto' %}">
-                        <div class="input-group mb-3">
-                            <input type="text" id="cuadro-busqueda" name="q" class="form-control"
-                                placeholder="🔎 Buscar por nombre"
-                                style="border-top-right-radius: 0; border-bottom-right-radius: 0; width: 80%; margin-right: 0;">
-                            <button class="btn btn-primary" type="submit">Buscar</button>
-                            <input type="reset" class="btn btn-secondary" value="Limpiar">
-                        </div>
-                    </form>
-                </div>
-
-
-
-            </form>
-
             <thead>
                 <tr>
                     <th class="col txt-datos txt-centrado">
@@ -207,274 +286,313 @@
                     <!-- ... Otros encabezados de columnas ... -->
                 </tr>
             </thead>
-
-
         </div>
-        <div class="table-responsive"> <!-- COMIENZO TABLA -->
-            <div id="scrollArea" class="scroll-box">
-                <table class="table table-striped" id="tabla-registros">
-                    <thead>
-                        <tr>
-                            <th class="col txt-datos txt-centrado">Agregar</th>
-                            <th class="col txt-datos txt-centrado">#</th>
-                            <th class="col txt-datos txt-centrado" hidden>ID Producto</th>
-                            <th class="col txt-datos txt-centrado"> Codigo</th>
-                            <th class="col txt-datos txt-centrado">Descripcion</th>
-                            <th class="col txt-datos txt-centrado">Precio</th>
-                            <th class="col txt-datos txt-centrado">Opciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="contentArea" class="table-group-divider border-light">
-                        {% for p in productos %}
-                        <tr>
-                            <td class="txt-datos txt-centrado larger-checkbox">
-                                <input type="checkbox" name="seleccionados" value="{{ p.id_pd }}">
-                            </td>
-                            
-                            <td class="txt-datos txt-centrado">{{ p.index }}</td>
-                            <td class="txt-datos txt-centrado" hidden>{{p.id_pd}}</td>
-                            <td class="txt-datos txt-centrado">{{p.cod}}</td>
-                            <td class="txt-datos txt-centrado">{{p.des}}</td>
-                            <td class="txt-datos txt-centrado">{{p.pre}}</td>
-                            <td class="txt-centrado">
-                                <div class="btn-group dropstart">
-                                    <button class="btn btn-primary btn-sm dropdown-toggle" type="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false"></button>
-                                    <ul class="dropdown-menu text-center cuerpo-menu-opciones">
-                                        <li><a href="{% url 'edicionProducto' id_pd=p.id_pd %}"
-                                                class="mb-1 dropdown-item bg-primary text-light">
-                                                Modificar
-                                            </a>
-                                        </li>
+
+
+    </div>
+    <div class="table-responsive"> <!-- COMIENZO TABLA -->
+        <div id="scrollArea" class="scroll-box">
+            <table class="table table-striped" id="tabla-registros">
+                <thead>
+                    <tr>
+                        <th class="col txt-datos txt-centrado">Agregar</th>
+                        <th class="col txt-datos txt-centrado" hidden>ID Producto</th>
+                        <th class="col txt-datos txt-centrado"> Codigo</th>
+                        <th class="col txt-datos txt-centrado">Descripcion</th>
+                        <th class="col txt-datos txt-centrado">Precio</th>
+                        <th class="col txt-datos txt-centrado">Stock</th>
+                        <th class="col txt-datos txt-centrado">Cantidad</th>
+                        <th class="col txt-datos txt-centrado">Opciones</th>
+                    </tr>
+                </thead>
+                <tbody id="contentArea" class="table-group-divider border-light">
+                    {% for p in productos %}
+                    <tr>
+                        <td class="txt-datos txt-centrado larger-checkbox">
+                            <input type="checkbox" name="seleccionados" value="{{ p.id_pd }}">
+                        </td>
+
+                        <td class="txt-datos txt-centrado" hidden>{{p.id_pd}}</td>
+                        <td class="txt-datos txt-centrado">{{p.cod}}</td>
+                        <td class="txt-datos txt-centrado">{{p.des}}</td>
+                        <td class="txt-datos txt-centrado">{{p.pre|floatformat:2}}</td>
+                        <td class="txt-datos txt-centrado">{{p.stock}}</td>
+                        <td class="txt-datos txt-centrado larger-checkbox">
+                            <!-- formulario para enviar la cantidad seleccionada -->
+                            <form id="agregar-producto-form" action="{% url 'agregar_producto_facturacion' %}" method="POST">
+                                {% csrf_token %}
+                                <input type="hidden" name="product_id" value="{{ p.id_pd }}">
+                                <div class="input-group">
+                                    <input type="number" name="cantidad" value="1" min="1" class="form-control form-control-sm custom-input" size="4">
+                                    <!-- Ajusta el tamaño (width) según sea necesario -->
+                                    <button type="submit" class="btn btn-success btn-sm">Agregar</button>
+                                </div>
+                            </form>
+
+                           
+                    
+                            <!-- Agregar más campos del formulario -->
+                        </td>
+                        <td class="txt-centrado">
+                            <div class="btn-group dropstart">
+                                <button class="btn btn-primary btn-sm dropdown-toggle" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false"></button>
+                                <ul class="dropdown-menu text-center cuerpo-menu-opciones">
+                                    <li><a href="{% url 'edicionProducto' id_pd=p.id_pd %}"
+                                            class="mb-1 dropdown-item bg-primary text-light">
+                                            Modificar
+                                        </a>
+                                    </li>
+                                    <!-- Button trigger modal Eliminar -->
+                                    <li>
                                         <!-- Button trigger modal Eliminar -->
-                                        <li>
-                                            <!-- Button trigger modal Eliminar -->
-                                            <button type="button" class="dropdown-item bg-danger text-light"
-                                                data-bs-toggle="modal" data-bs-target="#exampleModal{{p.id_pd}}"
-                                                data-current-url="{{ request.get_full_path }}">
-                                                Eliminar
-                                            </button>
-                                        </li>
+                                        <button type="button" class="dropdown-item bg-danger text-light"
+                                            data-bs-toggle="modal" data-bs-target="#exampleModal{{p.id_pd}}"
+                                            data-current-url="{{ request.get_full_path }}">
+                                            Eliminar
+                                        </button>
+                                    </li>
 
-                                        <li>
-                                            <!-- Nuevo botón "Ajuste" que abre un modal -->
-                                            <button type="button" class="dropdown-item bg-warning text-light"
-                                                data-bs-toggle="modal" data-bs-target="#ajusteModal{{p.id_pd}}">
-                                                Ajuste
-                                            </button>
-                                        </li>
+                                    <li>
+                                        <!-- Nuevo botón "Ajuste" que abre un modal -->
+                                        <button type="button" class="dropdown-item bg-warning text-light"
+                                            data-bs-toggle="modal" data-bs-target="#ajusteModal{{p.id_pd}}">
+                                            Ajuste
+                                        </button>
+                                    </li>
 
 
-                                        <li>
-                                            <!-- Nuevo botón "Ver Historial" que redirige a la página de historial -->
-                                            <a href="{% url 'ver_historial_producto' id_pd=p.id_pd %}"
-                                                class="dropdown-item">
-                                                Ver Historial
-                                            </a>
-                                        </li>
+                                    <li>
+                                        <!-- Nuevo botón "Ver Historial" que redirige a la página de historial -->
+                                        <a href="{% url 'ver_historial_producto' id_pd=p.id_pd %}"
+                                            class="dropdown-item">
+                                            Ver Historial
+                                        </a>
+                                    </li>
 
 
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-
-
-
-
-
-                        <!-- Modal de ajuste -->
-                        <div class="modal fade" id="ajusteModal{{p.id_pd}}" tabindex="-1"
-                            aria-labelledby="exampleModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content bg-whitesmoke">
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5" id="exampleModalLabel">Ajuste de Precio</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <form action="{% url 'aumentar_precio' id_pd=p.id_pd %}" method="POST">
-                                            {% csrf_token %}
-                                            <div class="form-group mb-1">
-                                                <label for="porcentaje">Porcentaje de ajuste:</label>
-                                                <input type="number" id="porcentaje" name="porcentaje"
-                                                    class="form-control" step="0.01" placeholder="Ingrese el porcentaje"
-                                                    required>
-                                            </div>
-                                            <div class="modal-footer justify-content-around">
-                                                <button type="button" class="btn btn-secondary px-5"
-                                                    data-bs-dismiss="modal">Cancelar</button>
-                                                <button type="submit" class="btn btn-success">Aplicar Ajuste</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
+                                </ul>
                             </div>
-                        </div>
+                        </td>
+                    </tr>
 
 
-                        <!-- Modal -->
 
-                        <div class="modal fade" id="exampleModal{{p.id_pd}}" tabindex="-1"
-                            aria-labelledby="exampleModalLabel" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content bg-whitesmoke">
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5" id="exampleModalLabel">Eliminar</h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="txt-centrado">
-                                            <p>
-                                                Esta acción no se puede deshacer.
-                                                <br>
-                                                ¿Está segur@ de <u>eliminar</u> este Producto?
-                                                <br><br>
-                                                <br>
-                                                Codigo: {{p.cod}}
-                                            </p>
+
+
+                    <!-- Modal de ajuste -->
+                    <div class="modal fade" id="ajusteModal{{p.id_pd}}" tabindex="-1"
+                        aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content bg-whitesmoke">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="exampleModalLabel">Ajuste de Precio</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form action="{% url 'aumentar_precio' id_pd=p.id_pd %}" method="POST">
+                                        {% csrf_token %}
+                                        <div class="form-group mb-1">
+                                            <label for="porcentaje">Porcentaje de ajuste:</label>
+                                            <input type="number" id="porcentaje" name="porcentaje" class="form-control"
+                                                step="0.01" placeholder="Ingrese el porcentaje" required>
                                         </div>
-                                    </div>
-                                    <div class="modal-footer justify-content-around">
-                                        <button type="button" class="btn btn-secondary px-5"
-                                            data-bs-dismiss="modal">No</button>
-                                        <a href="{% url 'eliminarProducto' id_pd=p.id_pd %}?current_url={{ request.get_full_path }}"
-                                            class="btn btn-danger eliminar-link">Si</a>
-
-                                    </div>
+                                        <div class="modal-footer justify-content-around">
+                                            <button type="button" class="btn btn-secondary px-5"
+                                                data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-success">Aplicar Ajuste</button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
-                        {% endfor %}
-                    </tbody>
+                    </div>
+
+
+                    <!-- Modal -->
+
+                    <div class="modal fade" id="exampleModal{{p.id_pd}}" tabindex="-1"
+                        aria-labelledby="exampleModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content bg-whitesmoke">
+                                <div class="modal-header">
+                                    <h1 class="modal-title fs-5" id="exampleModalLabel">Eliminar</h1>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="txt-centrado">
+                                        <p>
+                                            Esta acción no se puede deshacer.
+                                            <br>
+                                            ¿Está segur@ de <u>eliminar</u> este Producto?
+                                            <br><br>
+                                            <br>
+                                            Codigo: {{p.cod}}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-around">
+                                    <button type="button" class="btn btn-secondary px-5"
+                                        data-bs-dismiss="modal">No</button>
+                                    <a href="{% url 'eliminarProducto' id_pd=p.id_pd %}?current_url={{ request.get_full_path }}"
+                                        class="btn btn-danger eliminar-link">Si</a>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
 
 
 
 
 
 
-                </table>
-            </div>
+            </table>
+            <br>
+            <br>
         </div>
     </div>
-    <!-- Agregar el script JavaScript necesario -->
-    <!-- Pagination links -->
-    <div class="pagination justify-content-center mt-3">
-        <nav aria-label="Page navigation example">
-            <ul class="pagination">
-                {% if productos.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page=1"
-                        aria-label="Primera">
-                        <span aria-hidden="true">&laquo;&laquo;</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link"
-                        href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page={{ productos.previous_page_number }}"
-                        aria-label="Anterior">
-                        <span aria-hidden="true">&laquo;</span>
-                    </a>
-                </li>
-                {% endif %}
+</div>
+<!-- Agregar el script JavaScript necesario -->
+<!-- Pagination links -->
+<div class="pagination justify-content-center mt-3">
+    <nav aria-label="Page navigation example">
+        <ul class="pagination">
+            {% if productos.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page=1"
+                    aria-label="Primera">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page={{ productos.previous_page_number }}"
+                    aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% endif %}
 
-                <li class="page-item disabled">
-                    <span class="page-link">
-                        Página {{ productos.number }} de {{ productos.paginator.num_pages }}.
-                    </span>
-                </li>
+            <li class="page-item disabled">
+                <span class="page-link">
+                    Página {{ productos.number }} de {{ productos.paginator.num_pages }}.
+                </span>
+            </li>
 
-                {% if productos.has_next %}
-                <li class="page-item">
-                    <a class="page-link"
-                        href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page={{ productos.next_page_number }}"
-                        aria-label="Siguiente">
-                        <span aria-hidden="true">&raquo;</span>
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link"
-                        href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page={{ productos.paginator.num_pages }}"
-                        aria-label="Última">
-                        <span aria-hidden="true">&raquo;&raquo;</span>
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
+            {% if productos.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page={{ productos.next_page_number }}"
+                    aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link"
+                    href="?q={{ query }}&order_by={{ order_by }}&direction={{ direction }}&page={{ productos.paginator.num_pages }}"
+                    aria-label="Última">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var formularioBusqueda = document.getElementById('miFormulario');
-            var cuadroBusqueda = document.getElementById('cuadro-busqueda');
-            var botonBuscar = document.getElementById('botonBuscar');
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var formularioBusqueda = document.getElementById('miFormulario');
+        var cuadroBusqueda = document.getElementById('cuadro-busqueda');
+        var botonBuscar = document.getElementById('botonBuscar');
 
-            // Función para realizar la búsqueda
-            function buscar() {
-                window.location.href = "?q=" + cuadroBusqueda.value;
-            }
+        // Función para realizar la búsqueda
+        function buscar() {
+            window.location.href = "?q=" + cuadroBusqueda.value;
+        }
 
-            formularioBusqueda.addEventListener('submit', function (event) {
-                // Intercepta la solicitud de envío del formulario
-                event.preventDefault();
-                buscar(); // Realiza la búsqueda al enviar el formulario
-            });
+        formularioBusqueda.addEventListener('submit', function (event) {
+            // Intercepta la solicitud de envío del formulario
+            event.preventDefault();
+            buscar(); // Realiza la búsqueda al enviar el formulario
+        });
 
-            botonBuscar.addEventListener('click', function () {
-                // Maneja el clic en el botón de búsqueda
-                buscar();
+        botonBuscar.addEventListener('click', function () {
+            // Maneja el clic en el botón de búsqueda
+            buscar();
+        });
+    });
+
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
+        const selectedProductsInput = document.getElementById('selected_products');
+
+        // Recuperar productos seleccionados almacenados en localStorage
+        const storedSelectedProducts = localStorage.getItem('selectedProducts');
+        const selectedProducts = storedSelectedProducts ? JSON.parse(storedSelectedProducts) : [];
+
+        // Marcar las casillas según los productos seleccionados almacenados
+        checkboxes.forEach((checkbox) => {
+            const productId = parseInt(checkbox.value, 10);
+            checkbox.checked = selectedProducts.includes(productId);
+        });
+
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', function () {
+                updateSelectedProducts();
             });
         });
 
-    </script>
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
-            const selectedProductsInput = document.getElementById('selected_products');
-
-            // Recuperar productos seleccionados almacenados en localStorage
-            const storedSelectedProducts = localStorage.getItem('selectedProducts');
-            const selectedProducts = storedSelectedProducts ? JSON.parse(storedSelectedProducts) : [];
-
-            // Marcar las casillas según los productos seleccionados almacenados
+        function updateSelectedProducts() {
             checkboxes.forEach((checkbox) => {
                 const productId = parseInt(checkbox.value, 10);
-                checkbox.checked = selectedProducts.includes(productId);
+                if (checkbox.checked && !selectedProducts.includes(productId)) {
+                    selectedProducts.push(productId);
+                } else if (!checkbox.checked && selectedProducts.includes(productId)) {
+                    selectedProducts.splice(selectedProducts.indexOf(productId), 1);
+                }
             });
 
+            // Almacenar productos seleccionados en localStorage
+            localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+
+            // Actualizar el valor del campo oculto
+            selectedProductsInput.value = JSON.stringify(selectedProducts);
+        }
+    });
+
+</script>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const seleccionarTodosButton = document.getElementById('SeleccionarTodos');
+        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
+        const selectedProductsInput = document.getElementById('selected_products');
+
+        seleccionarTodosButton.addEventListener('click', function () {
             checkboxes.forEach((checkbox) => {
-                checkbox.addEventListener('change', function () {
-                    updateSelectedProducts();
-                });
+                checkbox.checked = true;
             });
 
-            function updateSelectedProducts() {
-                checkboxes.forEach((checkbox) => {
-                    const productId = parseInt(checkbox.value, 10);
-                    if (checkbox.checked && !selectedProducts.includes(productId)) {
-                        selectedProducts.push(productId);
-                    } else if (!checkbox.checked && selectedProducts.includes(productId)) {
-                        selectedProducts.splice(selectedProducts.indexOf(productId), 1);
-                    }
-                });
+            // Actualizar productos seleccionados almacenados en localStorage
+            const selectedProducts = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
+            localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
 
-                // Almacenar productos seleccionados en localStorage
-                localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
-
-                // Actualizar el valor del campo oculto
-                selectedProductsInput.value = JSON.stringify(selectedProducts);
-            }
+            // Actualizar el valor del campo oculto
+            selectedProductsInput.value = selectedProducts.join(',');
         });
-
-    </script>
-
-
+    });
+</script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -496,8 +614,57 @@
     });
 </script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Escuchar el evento click en todos los botones de agregar producto
+        document.querySelectorAll('.agregar-producto').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var form = this.closest('form');  // Obtener el formulario más cercano al botón
+                var formData = new FormData(form);  // Obtener los datos del formulario
+    
+                // Enviar la solicitud AJAX
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'  // Agregar el token CSRF
+                    }
+                })
+                .then(response => response.json())  // Convertir la respuesta a JSON
+                .then(data => {
+                    // Manejar la respuesta del servidor
+                    if (data.success) {
+                        alert('Producto agregado correctamente');  // Mostrar un mensaje de éxito
+                        // Actualizar la parte relevante de la página si es necesario
+                    } else {
+                        alert('Hubo un error al agregar el producto');  // Mostrar un mensaje de error
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);  // Manejar errores
+                });
+            });
+        });
+    });
+    </script>
+
+    <style>
+        .custom-button {
+    border: 5px solid black; /* Agrega un borde de 1px sólido de color gris */
+    border-radius: 5px; /* Agrega bordes redondeados */
+    padding: 5px 10px; /* Ajusta el relleno (padding) según sea necesario */
+    margin-right: 5px; /* Agrega un margen a la derecha entre los botones */
+
+
+    .custom-input {
+    font-size: 12px; /* Tamaño del texto */
+    width: 10px; /* Ancho del cuadro de texto */
+}
+}
+    </style>
+   
 
 
 
 
-    {% endblock %}
+{% endblock %}

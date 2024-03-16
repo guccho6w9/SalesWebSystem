@@ -1,0 +1,229 @@
+{% extends ".\base.html" %}
+{% load humanize %} <!-- Agrega esta línea para cargar la etiqueta personalizada 'humanize' -->
+
+{% block title %}Generar Factura{% endblock %}
+
+{% block body %}
+
+{% if messages %}
+<div class="alert alert-dismissible fade show" role="alert">
+    <ul class="messages">
+        {% for message in messages %}
+        {% if message.tags %}
+        <li
+            class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-danger{% endif %}">
+            {{ message }}
+        </li>
+        {% else %}
+        <li>{{ message }}</li>
+        {% endif %}
+        {% endfor %}
+    </ul>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<div class="container">
+
+    <div class="container">
+        <button id="printButton" class="btn btn-primary">Imprimir Factura</button>
+    </div>
+
+
+
+    <!-- Datos generales de la factura -->
+
+    <div class="row">
+
+        <div class="col-md-6">
+            <h4><strong>Corralón Sánchez</strong></h4>
+            <p><strong>Dirección:</strong> direccion generica calle 7, La Banda, Santiago del Estero</p>
+            <p><strong>Teléfono:</strong> 12345678</p>
+            <p><strong>IVA:</strong> Responsable Inscripto</p>
+        </div>
+        <div class="col-md-6">
+            <h4>&nbsp;</h4> <!-- Para alinear los encabezados de ambas columnas -->
+            <p><strong>Fecha y hora:</strong> {{ fecha_actual }}</p>
+            <p><strong>CUIT:</strong> 20.43493493.9</p>
+            <p><strong>Inicio de Actividades:</strong> 27/04/2004</p>
+        </div>
+    </div>
+
+    <!-- Información del cliente -->
+    <hr>
+    <div class="row">
+        <div class="col-md-6">
+            <h4></h4>
+            <p><strong>Cliente:</strong> <span id="cliente"></span></p>
+            <p><strong>Domicilio:</strong> <span id="domicilio"></span></p>
+            <p><strong>Ciudad:</strong> <span id="ciudad"></span></p>
+        </div>
+        <div class="col-md-6">
+            <h4>&nbsp;</h4> <!-- Para alinear los encabezados de ambas columnas -->
+            <p><strong>Condición de Venta:</strong> <span id="condicion_venta"></span></p>
+            <p><strong>Condición Fiscal:</strong> <span id="condicion_fiscal"></span></p>
+            <p><strong>CUIT/DNI:</strong> <span id="cuit_dni"></span></p>
+            <p><strong>Fecha Vcto. Pago:</strong> <span id="fecha_vencimiento_pago"></span></p>
+        </div>
+    </div>
+    <button type="button" class="btn btn-primary btn-group" data-bs-toggle="modal" data-bs-target="#ModalCliente">
+        Agregar Datos Cliente
+    </button>
+
+    <hr> <!-- Línea divisoria -->
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Cantidad</th>
+                <th>Descripción</th>
+                <th>Precio Unitario</th>
+                <th>Importe</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in factura_productos %}
+            <tr>
+                <td>{{ item.producto.cod }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>{{ item.producto.des }}</td>
+                <td>{{ item.producto.pre|floatformat:2 }}</td>
+
+                <td>{{ item.subtotal|floatformat:2 }}</td>
+                <td>
+                    <div class="btn-group">
+                        <form action="{% url 'eliminar_producto_factura' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ item.producto.cod }}">
+                            <!-- Cambia el nombre del campo a product_cod -->
+                            <button id="noprint" type="submit" class="btn btn-danger">Quitar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <hr>
+    <div>
+        <p>{{ total_en_palabras }} - <strong>Total ARS: {{ total|floatformat:2 }}</strong></p>
+    </div>
+    <hr>
+
+    <div class="btn-group">
+        <a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
+        <form action="{% url 'eliminar_productos_factura' %}" method="post">
+            {% csrf_token %}
+            <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="ModalCliente" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Agregar Datos Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulario para agregar datos del cliente -->
+                <form id="clienteForm" method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="cliente" class="form-label">Cliente</label>
+                        <input type="text" class="form-control" id="inputCliente" name="cliente">
+                    </div>
+                    <div class="mb-3">
+                        <label for="domicilio" class="form-label">Domicilio</label>
+                        <input type="text" class="form-control" id="inputDomicilio" name="domicilio">
+                    </div>
+                    <div class="mb-3">
+                        <label for="ciudad" class="form-label">Ciudad</label>
+                        <input type="text" class="form-control" id="inputCiudad" name="ciudad">
+                    </div>
+                    <div class="mb-3">
+                        <label for="condicion_venta" class="form-label">Condición de Venta</label>
+                        <select class="form-select" id="inputCondicionVenta" name="condicion_venta">
+                            <option value="efectivo">Efectivo</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transf_bancaria">Transferencia Bancaria</option>
+                            <option value="mercadopago">MercadoPago</option>
+                            <option value="naranjax">NaranjaX</option>
+                            <option value="uala">Ualá</option>
+                            <option value="transferencia_otro">Transferencia Otro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="condicion_fiscal" class="form-label">Condición Fiscal</label>
+                        <input type="text" class="form-control" id="inputCondicionFiscal" name="condicion_fiscal">
+                    </div>
+                    <div class="mb-3">
+                        <label for="cuit_dni" class="form-label">CUIT/DNI</label>
+                        <input type="text" class="form-control" id="inputCuitDni" name="cuit_dni">
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_vencimiento_pago" class="form-label">Fecha Vcto. Pago</label>
+                        <input type="text" class="form-control" id="inputFechaVencimientoPago"
+                            name="fecha_vencimiento_pago">
+                    </div>
+                    <button id="guardarClienteBtn" type="button" class="btn btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+
+        #printButton,
+        .btn-group {
+            display: none;
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('printButton').onclick = function () {
+        // Ocultar botones y otros elementos antes de imprimir
+        document.querySelector('.btn-group').style.display = 'none';
+
+
+        // Imprimir la factura
+        window.print();
+
+        // Mostrar botones y otros elementos después de imprimir
+        document.querySelector('.btn-group').style.display = 'block';
+    };
+
+    document.getElementById('guardarClienteBtn').onclick = function () {
+        // Obtener los valores del formulario
+        var cliente = document.getElementById('inputCliente').value;
+        var domicilio = document.getElementById('inputDomicilio').value;
+        var ciudad = document.getElementById('inputCiudad').value;
+        var condicionVenta = document.getElementById('inputCondicionVenta').value;
+        var condicionFiscal = document.getElementById('inputCondicionFiscal').value;
+        var cuitDni = document.getElementById('inputCuitDni').value;
+        var fechaVencimientoPago = document.getElementById('inputFechaVencimientoPago').value;
+
+        // Mostrar los datos del cliente en la página
+        document.getElementById('cliente').innerText = cliente;
+        document.getElementById('domicilio').innerText = domicilio;
+        document.getElementById('ciudad').innerText = ciudad;
+        document.getElementById('condicion_venta').innerText = condicionVenta;
+        document.getElementById('condicion_fiscal').innerText = condicionFiscal;
+        document.getElementById('cuit_dni').innerText = cuitDni;
+        document.getElementById('fecha_vencimiento_pago').innerText = fechaVencimientoPago;
+
+        // Cerrar el modal
+        var myModal = new bootstrap.Modal(document.getElementById('ModalCliente'));
+        myModal.hide();
+    };
+</script>
+
+
+{% endblock %}
