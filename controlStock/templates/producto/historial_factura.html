@@ -1,17 +1,16 @@
-{% extends 'base.html' %}
-
+{% extends ".\base.html" %}
 {% block historial_content %}
-    <h1>Historial de Facturas</h1>
-    <form method="POST" action="{% url 'borrar_historial_facturas' %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-danger">Borrar Historial</button>
-    </form>
+<h1>Historial de Facturas</h1>
+<form method="POST" action="{% url 'borrar_historial_facturas' %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Borrar Historial</button>
+</form>
+{% for factura in facturas %}
+<div class="factura-box">
+    <h3>Factura #{{ forloop.counter }}</h3>
     <table class="table">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Producto</th>
-                <th>Cantidad</th>
                 <th>Fecha</th>
                 <th>Nombre del Cliente</th>
                 <th>Domicilio</th>
@@ -19,26 +18,40 @@
                 <th>Condición de Venta</th>
                 <th>Condición Fiscal</th>
                 <th>CUIT/DNI</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio/u</th>
+                <th>SubTotal</th>
+                
+
+
 
             </tr>
         </thead>
         <tbody>
-            {% for factura in facturas %}
+            {% for producto in factura.productos.all %}
             <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>{{ factura.producto }}</td>
-                <td>{{ factura.cantidad }}</td>
-                <td>{{ factura.fecha }}</td>
-                <td>{{ factura.nombre_cliente }}</td>
-                <td>{{ factura.domicilio }}</td>
-                <td>{{ factura.ciudad }}</td>
-                <td>{{ factura.condicion_venta }}</td>
-                <td>{{ factura.condicion_fiscal }}</td>
-                <td>{{ factura.cuit_dni }}</td>
-
+                {% if forloop.first %} <!-- Mostrar los datos de la factura solo en la primera iteración -->
+                <td rowspan="{{ factura.productos.count }}">{{ factura.fecha }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.nombre_cliente }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.domicilio }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.ciudad }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.condicion_venta }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.condicion_fiscal }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.cuit_dni }}</td>
+                {% endif %}
+                <td>{{ producto.producto.des }}</td>
+                <td>{{ producto.cantidad }}</td>
+                <td>{{ producto.producto.pre }}</td>
+                <td>{{ producto.subtotal }}</td>
             </tr>
             {% endfor %}
+            <tr>
+                <td colspan="3"><strong>Total:</strong></td>
+                <td>{{ factura.total }}</td>
+            </tr>
         </tbody>
     </table>
-    
+</div>
+{% endfor %}
 {% endblock %}

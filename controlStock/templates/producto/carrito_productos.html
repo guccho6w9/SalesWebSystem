@@ -82,7 +82,8 @@
                         <th>Descripción</th>
                         <th>Cantidad</th>
                         <th>Precio Unitario</th>
-                        <th>Acciones</th>
+                        <th>Importe</th>
+  
                     </tr>
                 </thead>
                 <!-- Cuerpo de la tabla -->
@@ -97,6 +98,7 @@
                         <input type="hidden" name="producto" value="{{ item.producto.id_pd }}">
                         <!-- Input para enviar la cantidad del producto -->
                         <input type="hidden" name="cantidad" value="{{ item.cantidad }}">
+                        <td>{{ item.subtotal|floatformat:2 }}</td>
                         <td>
                             <div class="btn-group">
                                 <form action="{% url 'eliminar_producto_factura' %}" method="post">
@@ -121,14 +123,18 @@
 
         </form>
         <div class="btn-group">
-            <a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
+
             <button type="submit" class="btn btn-success">Registrar Factura</button>
-            <form action="{% url 'eliminar_productos_factura' %}" method="post">
-                {% csrf_token %}
-                <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
-            </form>
+           
         </div>
     </div>
+</div>
+<div class="btn-group">
+<a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
+<form action="{% url 'eliminar_productos_factura' %}" method="post">
+    {% csrf_token %}
+    <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
+</form>
 </div>
 
 <!-- Modal -->

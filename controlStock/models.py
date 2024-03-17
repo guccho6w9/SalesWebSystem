@@ -50,16 +50,6 @@ class HistorialProducto(models.Model):
         return f'Cambio de {self.producto} el {self.fecha_cambio}'
     
 
-class FacturaProducto(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
-    fecha = models.DateTimeField(default=timezone.now)
-
-    def __str__(self):
-        return f"{self.cantidad} x {self.producto.des} - ${self.producto.pre} c/u"
-
-    def subtotal(self):
-        return self.cantidad * self.producto.pre
     
 
 
@@ -76,15 +66,25 @@ class Cliente(models.Model):
     
 
 class HistorialFactura(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
-    fecha = models.DateTimeField()
+    fecha = models.DateTimeField(default=timezone.now)
     nombre_cliente = models.CharField(max_length=100)
     domicilio = models.CharField(max_length=100)
     ciudad = models.CharField(max_length=100)
     condicion_venta = models.CharField(max_length=100, default="efectivo")
-    condicion_fiscal = models.CharField(max_length=100, default="Arg.Consumidor Final")  # Nuevo campo
+    condicion_fiscal = models.CharField(max_length=100, default="Arg.Consumidor Final")
     cuit_dni = models.CharField(max_length=100)
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
-        return f"{self.producto} - {self.cantidad} - {self.fecha}"
+        return f"Factura del cliente {self.nombre_cliente} - Fecha: {self.fecha}"
+
+class FacturaProducto(models.Model):
+    factura = models.ForeignKey(HistorialFactura, on_delete=models.CASCADE, related_name='productos')
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField()
+
+    def __str__(self):
+        return f"{self.cantidad} x {self.producto.des} - ${self.producto.pre} c/u"
+
+    def subtotal(self):
+        return self.cantidad * self.producto.pre

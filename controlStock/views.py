@@ -448,19 +448,31 @@ def agregar_producto_facturacion(request):
         cantidad = int(request.POST.get('cantidad'))
         producto = Producto.objects.get(pk=product_id)
         
-        factura_existente = FacturaProducto.objects.filter(producto=producto).first()
+        # Obtener la factura existente o crear una nueva si no existe
+        factura_existente = HistorialFactura.objects.first()
+        if not factura_existente:
+            factura_existente = HistorialFactura.objects.create(
+                fecha=timezone.now(),
+                # Aquí debes proporcionar los detalles del cliente y otros campos según tu lógica de negocio
+            )
         
-        if factura_existente:
-            factura_existente.cantidad = F('cantidad') + cantidad
-            factura_existente.save()
+        # Verificar si el producto ya existe en la factura
+        factura_producto_existente = FacturaProducto.objects.filter(factura=factura_existente, producto=producto).first()
+        if factura_producto_existente:
+            # Si el producto ya existe, simplemente actualiza la cantidad
+            factura_producto_existente.cantidad = F('cantidad') + cantidad
+            factura_producto_existente.save()
         else:
-            factura_producto = FacturaProducto(producto=producto, cantidad=cantidad)
-            factura_producto.save()
+            # Si el producto no existe, crea una nueva instancia de FacturaProducto
+            factura_producto = FacturaProducto.objects.create(
+                producto=producto,
+                cantidad=cantidad,
+                factura=factura_existente,
+            )
         
         messages.success(request, f"Se ha agregado {cantidad} {producto.des} a la factura.")
         
         return redirect(request.META.get('HTTP_REFERER', 'producto'))
-       
     
 def mostrar_carrito_productos(request):
     factura_productos = FacturaProducto.objects.all()
@@ -476,11 +488,14 @@ def eliminar_producto_factura(request):
         print("ID del producto:", product_id)  # Agrega esta línea para imprimir el valor del ID
         try:
             producto = Producto.objects.get(cod=product_id)
-            factura_producto = FacturaProducto.objects.get(producto=producto)
-            factura_producto.delete()
-            messages.success(request, f"Se ha eliminado {producto.des} de la factura.")
-        except (Producto.DoesNotExist, FacturaProducto.DoesNotExist):
-            messages.error(request, "Producto no encontrado en la factura.")
+            factura_productos = FacturaProducto.objects.filter(producto=producto)
+            if factura_productos.exists():
+                factura_productos.delete()
+                messages.success(request, f"Se han eliminado los productos {producto.des} de la factura.")
+            else:
+                messages.error(request, "Producto no encontrado en la factura.")
+        except Producto.DoesNotExist:
+            messages.error(request, "Producto no encontrado.")
     
     return redirect('mostrar_carrito_productos')
 
@@ -589,6 +604,7 @@ def ingreso_stock_seleccionado(request):
     return redirect('producto')
 
 
+
 def registrar_factura(request):
     if request.method == 'POST':
         # Obtener datos del cliente
@@ -606,38 +622,56 @@ def registrar_factura(request):
         if not factura_productos or not cantidades:
             return HttpResponseBadRequest('No se han proporcionado productos o cantidades')
 
-        # Crear un registro en el historial de facturas para cada producto en la factura actual
+        # Inicializar el total de la factura
+        total_factura = 0
+
+        # Crear una instancia de HistorialFactura
+        factura = HistorialFactura.objects.create(
+            fecha=timezone.now(),
+            nombre_cliente=cliente,
+            domicilio=domicilio,
+            ciudad=ciudad,
+            condicion_venta=condicion_venta,
+            condicion_fiscal=condicion_fiscal,
+            cuit_dni=cuit_dni,
+        )
+
+        # Crear un registro en FacturaProducto para cada producto en la factura
         for prod_id, cantidad in zip(factura_productos, cantidades):
             producto_obj = Producto.objects.get(pk=prod_id)
-            factura = HistorialFactura.objects.create(
+            cantidad_entero = int(cantidad)  # Convertir la cantidad a entero
+            
+            # Calcular el subtotal del producto y sumarlo al total de la factura
+            subtotal_producto = cantidad_entero * producto_obj.pre
+            total_factura += subtotal_producto
+            
+            FacturaProducto.objects.create(
                 producto=producto_obj,
-                cantidad=cantidad,
-                fecha=timezone.now(),
-                nombre_cliente=cliente,
-                domicilio=domicilio,
-                ciudad=ciudad,
-                condicion_venta=condicion_venta,
-                condicion_fiscal=condicion_fiscal,
-                cuit_dni=cuit_dni,
+                cantidad=cantidad_entero,
+                factura=factura,
             )
-            factura.save()
+
+        # Asignar el total de la factura a la instancia de HistorialFactura
+        factura.total = total_factura
+        factura.save()
 
         # Redirigir a la página de historial de facturas
         return redirect('ir_historialfactura')
     else:
         # Manejar el caso en el que no se reciba una solicitud POST correctamente
         return HttpResponseBadRequest('La solicitud debe ser de tipo POST')
-
+    
 
 def ir_historialfactura(request):
     # Obtener todas las facturas de la base de datos
     facturas = HistorialFactura.objects.all()
+    
     return render(request, 'producto/historial_factura.html', {'facturas': facturas})
 
 
 def historial_factura(request):
     # Obtener todas las facturas de la base de datos
-    facturas = FacturaProducto.objects.all()
+    facturas = FacturaProducto.objects.all().select_related('producto')  # Incluye la descripción del producto
     return render(request, 'producto/historial_factura.html', {'facturas': facturas})
 
 
