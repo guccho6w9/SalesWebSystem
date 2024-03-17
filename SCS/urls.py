@@ -52,6 +52,14 @@ urlpatterns = [
     path('agregar_datos_cliente/', views.agregar_datos_cliente, name='agregar_datos_cliente'),
     path('eliminar_producto_factura/', views.eliminar_producto_factura, name='eliminar_producto_factura'),
     path('ingreso_stock_seleccionado/', views.ingreso_stock_seleccionado, name='ingreso_stock_seleccionado'),
+    path('actualizar_productos_seleccionados/', views.actualizar_productos_seleccionados, name='actualizar_productos_seleccionados'),
+    path('registrar_factura/', views.registrar_factura, name='registrar_factura'),
+    path('historial_factura/', views.historial_factura, name='historial_factura'),
+    path('historialfactura/', views.ir_historialfactura, name='ir_historialfactura'),
+    path('borrar_historial_facturas/', views.borrar_historial_facturas, name='borrar_historial_facturas'),
+ 
+ 
+    
 
 
     path('quitar_producto_seleccionado/', quitar_producto_seleccionado, name='quitar_producto_seleccionado'),

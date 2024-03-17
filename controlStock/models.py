@@ -67,18 +67,24 @@ class Cliente(models.Model):
     nombre = models.CharField(max_length=100)
     domicilio = models.CharField(max_length=200)
     ciudad = models.CharField(max_length=100)
-    condicion_venta = models.CharField(max_length=100, choices=(
-        ('efectivo', 'Efectivo'),
-        ('tarjeta', 'Tarjeta'),
-        ('transf_bancaria', 'Transferencia Bancaria'),
-        ('mercadopago', 'MercadoPago'),
-        ('naranjax', 'NaranjaX'),
-        ('uala', 'Ualá'),
-        ('transferencia_otro', 'Transferencia Otro')
-    ))
+    condicion_venta = models.CharField(max_length=100)
     condicion_fiscal = models.CharField(max_length=100)
     cuit_dni = models.CharField(max_length=20)
-    fecha_vencimiento_pago = models.DateField()
 
     def __str__(self):
         return self.nombre
+    
+
+class HistorialFactura(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    cantidad = models.IntegerField()
+    fecha = models.DateTimeField()
+    nombre_cliente = models.CharField(max_length=100)
+    domicilio = models.CharField(max_length=100)
+    ciudad = models.CharField(max_length=100)
+    condicion_venta = models.CharField(max_length=100, default="efectivo")
+    condicion_fiscal = models.CharField(max_length=100, default="Arg.Consumidor Final")  # Nuevo campo
+    cuit_dni = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.producto} - {self.cantidad} - {self.fecha}"

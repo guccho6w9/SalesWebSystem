@@ -25,9 +25,6 @@
 
 <div class="container">
 
-    <div class="container">
-        <button id="printButton" class="btn btn-primary">Imprimir Factura</button>
-    </div>
 
 
 
@@ -37,87 +34,100 @@
 
         <div class="col-md-6">
             <h4><strong>Corralón Sánchez</strong></h4>
-            <p><strong>Dirección:</strong> direccion generica calle 7, La Banda, Santiago del Estero</p>
-            <p><strong>Teléfono:</strong> 12345678</p>
+            <p><strong>Dirección:</strong> Anunciata cochetti y 25 de mayo - La Banda, Santiago del Estero</p>
+            <p><strong>Teléfono:</strong> 4271549 </p>
             <p><strong>IVA:</strong> Responsable Inscripto</p>
         </div>
         <div class="col-md-6">
-            <h4>&nbsp;</h4> <!-- Para alinear los encabezados de ambas columnas -->
+            <h4>&nbsp;</h4>
+            <!-- Para alinear los encabezados de ambas columnas -->
             <p><strong>Fecha y hora:</strong> {{ fecha_actual }}</p>
             <p><strong>CUIT:</strong> 20.43493493.9</p>
             <p><strong>Inicio de Actividades:</strong> 27/04/2004</p>
         </div>
     </div>
-
+    <button id="printButton" class="btn btn-primary">Imprimir Factura</button> 
     <!-- Información del cliente -->
-    <hr>
-    <div class="row">
-        <div class="col-md-6">
-            <h4></h4>
-            <p><strong>Cliente:</strong> <span id="cliente"></span></p>
-            <p><strong>Domicilio:</strong> <span id="domicilio"></span></p>
-            <p><strong>Ciudad:</strong> <span id="ciudad"></span></p>
-        </div>
-        <div class="col-md-6">
-            <h4>&nbsp;</h4> <!-- Para alinear los encabezados de ambas columnas -->
-            <p><strong>Condición de Venta:</strong> <span id="condicion_venta"></span></p>
-            <p><strong>Condición Fiscal:</strong> <span id="condicion_fiscal"></span></p>
-            <p><strong>CUIT/DNI:</strong> <span id="cuit_dni"></span></p>
-            <p><strong>Fecha Vcto. Pago:</strong> <span id="fecha_vencimiento_pago"></span></p>
-        </div>
-    </div>
-    <button type="button" class="btn btn-primary btn-group" data-bs-toggle="modal" data-bs-target="#ModalCliente">
-        Agregar Datos Cliente
-    </button>
 
     <hr> <!-- Línea divisoria -->
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Código</th>
-                <th>Cantidad</th>
-                <th>Descripción</th>
-                <th>Precio Unitario</th>
-                <th>Importe</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in factura_productos %}
-            <tr>
-                <td>{{ item.producto.cod }}</td>
-                <td>{{ item.cantidad }}</td>
-                <td>{{ item.producto.des }}</td>
-                <td>{{ item.producto.pre|floatformat:2 }}</td>
 
-                <td>{{ item.subtotal|floatformat:2 }}</td>
-                <td>
-                    <div class="btn-group">
-                        <form action="{% url 'eliminar_producto_factura' %}" method="post">
-                            {% csrf_token %}
-                            <input type="hidden" name="product_id" value="{{ item.producto.cod }}">
-                            <!-- Cambia el nombre del campo a product_cod -->
-                            <button id="noprint" type="submit" class="btn btn-danger">Quitar</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <hr>
+
     <div>
-        <p>{{ total_en_palabras }} - <strong>Total ARS: {{ total|floatformat:2 }}</strong></p>
-    </div>
-    <hr>
 
-    <div class="btn-group">
-        <a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
-        <form action="{% url 'eliminar_productos_factura' %}" method="post">
+        <form action="{% url 'registrar_factura' %}" method="post">
             {% csrf_token %}
-            <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
+            <!-- Información del cliente -->
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Cliente:</strong><input type="text" id="inputCliente" name="cliente" placeholder="Cliente"></p>
+                    <p><strong>Direccion:</strong><input type="text" id="inputDomicilio" name="domicilio" placeholder="Domicilio"></p>
+                    <p><strong>Ciudad:</strong><input type="text" id="inputCiudad" name="ciudad" placeholder="Ciudad"></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Condicion venta:</strong><input type="text" id="inputCondicionVenta" name="condicion_venta" placeholder="Condición de Venta"></p>
+                    <p><strong>Condicion Fiscal:</strong><input type="text" id="inputCondicionFiscal" name="condicion_fiscal" placeholder="Condición Fiscal"></p>
+                    <p><strong>Cuit/Dni:</strong><input type="text" id="inputCuitDni" name="cuit_dni" placeholder="CUIT/DNI"></p>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Tabla de productos de la factura -->
+            <table class="table">
+                <!-- Encabezados de la tabla -->
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unitario</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <!-- Cuerpo de la tabla -->
+                <tbody>
+                    {% for item in factura_productos %}
+                    <tr>
+                        <td>{{ item.producto.cod }}</td>
+                        <td>{{ item.producto.des }}</td>
+                        <td>{{ item.cantidad }}</td>
+                        <td>{{ item.producto.pre|floatformat:2 }}</td>
+                        <!-- Input oculto para enviar el ID del producto -->
+                        <input type="hidden" name="producto" value="{{ item.producto.id_pd }}">
+                        <!-- Input para enviar la cantidad del producto -->
+                        <input type="hidden" name="cantidad" value="{{ item.cantidad }}">
+                        <td>
+                            <div class="btn-group">
+                                <form action="{% url 'eliminar_producto_factura' %}" method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="product_id" value="{{ item.producto.cod }}">
+                                    <!-- Cambia el nombre del campo a product_cod -->
+                                    <button id="noprint" type="submit" class="btn btn-danger">Quitar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <hr>
+            <div>
+                <p>{{ total_en_palabras }} - <strong>Total ARS: {{ total|floatformat:2 }}</strong></p>
+            </div>
+            <hr>
+
+            <!-- Botón para enviar el formulario -->
+
         </form>
+        <div class="btn-group">
+            <a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
+            <button type="submit" class="btn btn-success">Registrar Factura</button>
+            <form action="{% url 'eliminar_productos_factura' %}" method="post">
+                {% csrf_token %}
+                <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -147,15 +157,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="condicion_venta" class="form-label">Condición de Venta</label>
-                        <select class="form-select" id="inputCondicionVenta" name="condicion_venta">
-                            <option value="efectivo">Efectivo</option>
-                            <option value="tarjeta">Tarjeta</option>
-                            <option value="transf_bancaria">Transferencia Bancaria</option>
-                            <option value="mercadopago">MercadoPago</option>
-                            <option value="naranjax">NaranjaX</option>
-                            <option value="uala">Ualá</option>
-                            <option value="transferencia_otro">Transferencia Otro</option>
-                        </select>
+                        <input type="text" class="form-control" id="inputCondicionVenta" name="condicion_venta">
                     </div>
                     <div class="mb-3">
                         <label for="condicion_fiscal" class="form-label">Condición Fiscal</label>
@@ -165,11 +167,7 @@
                         <label for="cuit_dni" class="form-label">CUIT/DNI</label>
                         <input type="text" class="form-control" id="inputCuitDni" name="cuit_dni">
                     </div>
-                    <div class="mb-3">
-                        <label for="fecha_vencimiento_pago" class="form-label">Fecha Vcto. Pago</label>
-                        <input type="text" class="form-control" id="inputFechaVencimientoPago"
-                            name="fecha_vencimiento_pago">
-                    </div>
+
                     <button id="guardarClienteBtn" type="button" class="btn btn-primary">Guardar</button>
                 </form>
             </div>
@@ -208,7 +206,6 @@
         var condicionVenta = document.getElementById('inputCondicionVenta').value;
         var condicionFiscal = document.getElementById('inputCondicionFiscal').value;
         var cuitDni = document.getElementById('inputCuitDni').value;
-        var fechaVencimientoPago = document.getElementById('inputFechaVencimientoPago').value;
 
         // Mostrar los datos del cliente en la página
         document.getElementById('cliente').innerText = cliente;
@@ -217,7 +214,15 @@
         document.getElementById('condicion_venta').innerText = condicionVenta;
         document.getElementById('condicion_fiscal').innerText = condicionFiscal;
         document.getElementById('cuit_dni').innerText = cuitDni;
-        document.getElementById('fecha_vencimiento_pago').innerText = fechaVencimientoPago;
+
+        document.getElementById('clienteHidden').value = cliente;
+        document.getElementById('domicilioHidden').value = domicilio;
+        document.getElementById('ciudadHidden').value = ciudad;
+        document.getElementById('condicionVentaHidden').value = condicionVenta;
+        document.getElementById('condicionFiscalHidden').value = condicionFiscal;
+        document.getElementById('cuitDniHidden').value = cuitDni;
+
+
 
         // Cerrar el modal
         var myModal = new bootstrap.Modal(document.getElementById('ModalCliente'));

@@ -150,6 +150,11 @@
                 {% csrf_token %}
                 <button type="submit" class="btn btn-light custom-button">Generar Factura</button>
             </form>
+
+            <form method="POST" action="{% url 'ir_historialfactura' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-light custom-button">Historial Transacciones</button>
+            </form>
         </div>
 
         <!-- Formulario para registro de datos -->
@@ -257,7 +262,7 @@
         <div>
             <div class="btn-group">
                 <button type="button" class="btn btn-secondary btn-sm" id="SeleccionarTodos"> Sel.Todos</button>
-                <button type="button" class="btn btn-secondary btn-sm" id="DeseleccionarProductos">Des.Todos</button>
+              
 
             </div>
             <thead>
@@ -535,8 +540,9 @@
     document.addEventListener('DOMContentLoaded', function () {
         const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
         const selectedProductsInput = document.getElementById('selected_products');
+        const selectAllButton = document.getElementById('SeleccionarTodos');
 
-        // Recuperar productos seleccionados almacenados en localStorage
+        // Recuperar productos seleccionados almacenados en localStorage al cargar la página
         const storedSelectedProducts = localStorage.getItem('selectedProducts');
         const selectedProducts = storedSelectedProducts ? JSON.parse(storedSelectedProducts) : [];
 
@@ -549,50 +555,48 @@
         checkboxes.forEach((checkbox) => {
             checkbox.addEventListener('change', function () {
                 updateSelectedProducts();
+                updateSelectAllButtonState();
             });
         });
 
         function updateSelectedProducts() {
+            const updatedSelectedProducts = [];
             checkboxes.forEach((checkbox) => {
                 const productId = parseInt(checkbox.value, 10);
-                if (checkbox.checked && !selectedProducts.includes(productId)) {
-                    selectedProducts.push(productId);
-                } else if (!checkbox.checked && selectedProducts.includes(productId)) {
-                    selectedProducts.splice(selectedProducts.indexOf(productId), 1);
+                if (checkbox.checked) {
+                    updatedSelectedProducts.push(productId);
                 }
             });
 
             // Almacenar productos seleccionados en localStorage
-            localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
+            localStorage.setItem('selectedProducts', JSON.stringify(updatedSelectedProducts));
 
             // Actualizar el valor del campo oculto
-            selectedProductsInput.value = JSON.stringify(selectedProducts);
+            selectedProductsInput.value = JSON.stringify(updatedSelectedProducts);
         }
-    });
 
-</script>
+        function updateSelectAllButtonState() {
+            const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+            selectAllButton.innerText = allChecked ? 'Deseleccionar Todos' : 'Seleccionar Todos';
+        }
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const seleccionarTodosButton = document.getElementById('SeleccionarTodos');
-        const checkboxes = document.querySelectorAll('input[name="seleccionados"]');
-        const selectedProductsInput = document.getElementById('selected_products');
-
-        seleccionarTodosButton.addEventListener('click', function () {
+        selectAllButton.addEventListener('click', function () {
+            const checkValue = selectAllButton.innerText === 'Seleccionar Todos';
             checkboxes.forEach((checkbox) => {
-                checkbox.checked = true;
+                checkbox.checked = checkValue;
             });
 
-            // Actualizar productos seleccionados almacenados en localStorage
-            const selectedProducts = Array.from(checkboxes).filter(checkbox => checkbox.checked).map(checkbox => checkbox.value);
-            localStorage.setItem('selectedProducts', JSON.stringify(selectedProducts));
-
-            // Actualizar el valor del campo oculto
-            selectedProductsInput.value = selectedProducts.join(',');
+            updateSelectedProducts();
+            updateSelectAllButtonState();
         });
+
+        // Actualizar el estado del botón "Seleccionar Todos" al cargar la página
+        updateSelectAllButtonState();
     });
 </script>
+
+
+
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -614,43 +618,10 @@
     });
 </script>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Escuchar el evento click en todos los botones de agregar producto
-        document.querySelectorAll('.agregar-producto').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var form = this.closest('form');  // Obtener el formulario más cercano al botón
-                var formData = new FormData(form);  // Obtener los datos del formulario
-    
-                // Enviar la solicitud AJAX
-                fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}'  // Agregar el token CSRF
-                    }
-                })
-                .then(response => response.json())  // Convertir la respuesta a JSON
-                .then(data => {
-                    // Manejar la respuesta del servidor
-                    if (data.success) {
-                        alert('Producto agregado correctamente');  // Mostrar un mensaje de éxito
-                        // Actualizar la parte relevante de la página si es necesario
-                    } else {
-                        alert('Hubo un error al agregar el producto');  // Mostrar un mensaje de error
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);  // Manejar errores
-                });
-            });
-        });
-    });
-    </script>
 
     <style>
         .custom-button {
-    border: 5px solid black; /* Agrega un borde de 1px sólido de color gris */
+    border: 2px solid black; /* Agrega un borde de 1px sólido de color gris */
     border-radius: 5px; /* Agrega bordes redondeados */
     padding: 5px 10px; /* Ajusta el relleno (padding) según sea necesario */
     margin-right: 5px; /* Agrega un margen a la derecha entre los botones */

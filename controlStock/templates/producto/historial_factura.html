@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block historial_content %}
+    <h1>Historial de Facturas</h1>
+    <form method="POST" action="{% url 'borrar_historial_facturas' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Borrar Historial</button>
+    </form>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Fecha</th>
+                <th>Nombre del Cliente</th>
+                <th>Domicilio</th>
+                <th>Ciudad</th>
+                <th>Condición de Venta</th>
+                <th>Condición Fiscal</th>
+                <th>CUIT/DNI</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            {% for factura in facturas %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ factura.producto }}</td>
+                <td>{{ factura.cantidad }}</td>
+                <td>{{ factura.fecha }}</td>
+                <td>{{ factura.nombre_cliente }}</td>
+                <td>{{ factura.domicilio }}</td>
+                <td>{{ factura.ciudad }}</td>
+                <td>{{ factura.condicion_venta }}</td>
+                <td>{{ factura.condicion_fiscal }}</td>
+                <td>{{ factura.cuit_dni }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+{% endblock %}

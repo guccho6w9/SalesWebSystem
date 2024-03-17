@@ -11,6 +11,11 @@ from django.forms.models import model_to_dict
 from django.utils.translation import activate
 from num2words import num2words
 from django.template.loader import get_template
+from django.http import HttpResponseBadRequest
+from django.http import HttpResponseRedirect
+from collections import defaultdict
+
+from django.urls import reverse
 
 
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -77,7 +82,7 @@ def producto(request):
     elif order_by == 'pre':
         all_products = all_products.order_by('-pre' if direction == 'desc' else 'pre')
 
-    paginator = Paginator(all_products, 200)
+    paginator = Paginator(all_products, 300)
     page = request.GET.get('page')
 
     try:
@@ -305,25 +310,31 @@ def ver_historial_producto(request, id_pd):
 
 
 def listar_productos_seleccionados(request):
+    # Obtener los productos seleccionados de la sesión
+    selected_products = request.session.get('selected_products', [])
+
+    # Si es una solicitud POST, actualizar la lista de productos seleccionados
     if request.method == 'POST':
         try:
-            selected_products = json.loads(request.POST.get('selected_products', '[]'))
-            selected_products = [int(id_pd) for id_pd in selected_products]
-            selected_products = Producto.objects.filter(id_pd__in=selected_products)
+            # Obtener los IDs de los productos seleccionados del POST
+            selected_products_ids = json.loads(request.POST.get('selected_products', '[]'))
+            selected_products_ids = [int(id_pd) for id_pd in selected_products_ids]
 
-            # Save the list of dictionaries in the session
-            request.session['selected_products'] = list(selected_products.values())
+            # Filtrar los productos correspondientes a los IDs
+            selected_products_queryset = Producto.objects.filter(id_pd__in=selected_products_ids)
 
-            return render(request, 'listar_productos_seleccionados.html', {'selected_products': selected_products})
+            # Guardar la lista de productos seleccionados en la sesión
+            request.session['selected_products'] = list(selected_products_queryset.values())
+
+            # Redirigir a la misma página
+            return redirect('listar_productos_seleccionados')
         except ValueError:
-            # Handle the case where the JSON decoding fails
-            messages.error(request, 'Error al cargar los productos seleccionados.')
-            return render(request, 'listar_productos_seleccionados.html', {'selected_products': []})
+            # Manejar errores de decodificación JSON
+            print("")
 
-    # Load the selected products from the session
-    selected_products = request.session.get('selected_products', [])
-    
+    # Renderizar la página con los productos seleccionados
     return render(request, 'listar_productos_seleccionados.html', {'selected_products': selected_products})
+
 
 
 
@@ -406,6 +417,29 @@ def ajustar_precio_seleccionados(request):
 
     # Redirige a la página principal de productos si ocurre algún error
     return redirect('producto')
+
+def actualizar_productos_seleccionados(request):
+    if request.method == 'POST' and request.is_ajax():
+        try:
+            # Obtener la lista de productos seleccionados del cuerpo de la solicitud
+            selected_products = json.loads(request.body)
+
+            # Guardar la lista de productos seleccionados en la sesión
+            request.session['selected_products'] = selected_products
+
+            # Obtener los detalles completos de los productos seleccionados
+            selected_products_details = Producto.objects.filter(id_pd__in=selected_products)
+
+            # Convertir los detalles de los productos a un formato adecuado para JSON
+            selected_products_details_json = list(selected_products_details.values())
+
+            return JsonResponse({'selected_products': selected_products_details_json})
+        except ValueError:
+            # Manejar el error si falla la decodificación JSON
+            return JsonResponse({'error': 'Error al cargar los productos seleccionados.'}, status=400)
+
+    # Si la solicitud no es AJAX o no es POST, devolver un error
+    return JsonResponse({'error': 'Solicitud no válida.'}, status=400)
 
 
 def agregar_producto_facturacion(request):
@@ -497,19 +531,35 @@ def convertir_precio_a_palabras(precio):
 
 def agregar_datos_cliente(request):
     if request.method == 'POST':
-        cliente = Cliente(
-            nombre=request.POST['cliente'],
-            domicilio=request.POST['domicilio'],
-            ciudad=request.POST['ciudad'],
-            condicion_venta=request.POST['condicion_venta'],
-            condicion_fiscal=request.POST['condicion_fiscal'],
-            cuit_dni=request.POST['cuit_dni'],
-            fecha_vencimiento_pago=request.POST['fecha_vencimiento_pago']
-        )
-        cliente.save()
-        return render(request, 'producto/producto.html')  # Renderiza una plantilla de éxito, puedes ajustarlo según tus necesidades
+        # Verificar si ya existe un cliente en la base de datos
+        if Cliente.objects.exists():
+            # Si existe, obtén el cliente existente
+            cliente = Cliente.objects.first()
+            # Actualiza los datos del cliente con los nuevos datos del formulario
+            cliente.nombre = request.POST['cliente']
+            cliente.domicilio = request.POST['domicilio']
+            cliente.ciudad = request.POST['ciudad']
+            cliente.condicion_venta = request.POST['condicion_venta']
+            cliente.condicion_fiscal = request.POST['condicion_fiscal']
+            cliente.cuit_dni = request.POST['cuit_dni']
+            cliente.fecha_vencimiento_pago = request.POST['fecha_vencimiento_pago']
+            cliente.save()
+        else:
+            # Si no hay ningún cliente en la base de datos, crea uno nuevo
+            cliente = Cliente.objects.create(
+                nombre=request.POST['cliente'],
+                domicilio=request.POST['domicilio'],
+                ciudad=request.POST['ciudad'],
+                condicion_venta=request.POST['condicion_venta'],
+                condicion_fiscal=request.POST['condicion_fiscal'],
+                cuit_dni=request.POST['cuit_dni'],
+                fecha_vencimiento_pago=request.POST['fecha_vencimiento_pago']
+            )
+        # Redirigir a la página de productos después de agregar o actualizar al cliente
+        return redirect('producto')
     else:
-        return redirect('producto/producto.html')  # Si no es una solicitud POST, redirige a la página correspondiente
+        # Si no es una solicitud POST, redirige a la página de productos
+        return redirect('producto') # Si no es una solicitud POST, redirige a la página correspondiente
     
 def ingreso_stock_seleccionado(request):
     if request.method == 'POST':
@@ -538,3 +588,61 @@ def ingreso_stock_seleccionado(request):
     # Redirige a la página principal de productos si ocurre algún error
     return redirect('producto')
 
+
+def registrar_factura(request):
+    if request.method == 'POST':
+        # Obtener datos del cliente
+        cliente = request.POST.get('cliente')
+        domicilio = request.POST.get('domicilio')
+        ciudad = request.POST.get('ciudad')
+        condicion_venta = request.POST.get('condicion_venta')
+        condicion_fiscal = request.POST.get('condicion_fiscal')
+        cuit_dni = request.POST.get('cuit_dni')
+
+        # Obtener los productos de la factura
+        factura_productos = request.POST.getlist('producto')
+        cantidades = request.POST.getlist('cantidad')
+
+        if not factura_productos or not cantidades:
+            return HttpResponseBadRequest('No se han proporcionado productos o cantidades')
+
+        # Crear un registro en el historial de facturas para cada producto en la factura actual
+        for prod_id, cantidad in zip(factura_productos, cantidades):
+            producto_obj = Producto.objects.get(pk=prod_id)
+            factura = HistorialFactura.objects.create(
+                producto=producto_obj,
+                cantidad=cantidad,
+                fecha=timezone.now(),
+                nombre_cliente=cliente,
+                domicilio=domicilio,
+                ciudad=ciudad,
+                condicion_venta=condicion_venta,
+                condicion_fiscal=condicion_fiscal,
+                cuit_dni=cuit_dni,
+            )
+            factura.save()
+
+        # Redirigir a la página de historial de facturas
+        return redirect('ir_historialfactura')
+    else:
+        # Manejar el caso en el que no se reciba una solicitud POST correctamente
+        return HttpResponseBadRequest('La solicitud debe ser de tipo POST')
+
+
+def ir_historialfactura(request):
+    # Obtener todas las facturas de la base de datos
+    facturas = HistorialFactura.objects.all()
+    return render(request, 'producto/historial_factura.html', {'facturas': facturas})
+
+
+def historial_factura(request):
+    # Obtener todas las facturas de la base de datos
+    facturas = FacturaProducto.objects.all()
+    return render(request, 'producto/historial_factura.html', {'facturas': facturas})
+
+
+def borrar_historial_facturas(request):
+    if request.method == 'POST':
+        # Borrar todos los registros del historial de facturas
+        HistorialFactura.objects.all().delete()
+        return HttpResponseRedirect(reverse('ir_historialfactura'))
