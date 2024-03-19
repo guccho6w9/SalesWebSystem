@@ -11,7 +11,9 @@ class Producto(models.Model):
     pre = models.FloatField(blank=False)
     aju = models.CharField(max_length=4, blank=False)
     ofe = models.CharField(max_length=4, blank=False)
-
+    en_carrito = models.BooleanField(default=False)
+    cantidad = models.IntegerField(default=0)
+    subtotal = models.FloatField(default=0)
     def __str__(self):
         return f"{self.cod} {self.des} {self.pre} {self.aju} {self.ofe} {self.stock}"
     
@@ -81,10 +83,12 @@ class HistorialFactura(models.Model):
 class FacturaProducto(models.Model):
     factura = models.ForeignKey(HistorialFactura, on_delete=models.CASCADE, related_name='productos')
     producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
-    cantidad = models.IntegerField()
+    cantidad = models.IntegerField(default=0)
+    subtotal_calculado = models.FloatField(default=0)
 
     def __str__(self):
         return f"{self.cantidad} x {self.producto.des} - ${self.producto.pre} c/u"
 
     def subtotal(self):
         return self.cantidad * self.producto.pre
+

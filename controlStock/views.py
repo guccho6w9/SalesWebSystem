@@ -448,61 +448,69 @@ def agregar_producto_facturacion(request):
         cantidad = int(request.POST.get('cantidad'))
         producto = Producto.objects.get(pk=product_id)
         
-        # Obtener la factura existente o crear una nueva si no existe
-        factura_existente = HistorialFactura.objects.first()
-        if not factura_existente:
-            factura_existente = HistorialFactura.objects.create(
-                fecha=timezone.now(),
-                # Aquí debes proporcionar los detalles del cliente y otros campos según tu lógica de negocio
-            )
+        # Verificar si la cantidad ingresada excede el stock disponible
+        if cantidad > producto.stock:
+            return HttpResponseBadRequest("La cantidad ingresada excede el stock disponible.")
         
-        # Verificar si el producto ya existe en la factura
-        factura_producto_existente = FacturaProducto.objects.filter(factura=factura_existente, producto=producto).first()
-        if factura_producto_existente:
-            # Si el producto ya existe, simplemente actualiza la cantidad
-            factura_producto_existente.cantidad = F('cantidad') + cantidad
-            factura_producto_existente.save()
-        else:
-            # Si el producto no existe, crea una nueva instancia de FacturaProducto
-            factura_producto = FacturaProducto.objects.create(
-                producto=producto,
-                cantidad=cantidad,
-                factura=factura_existente,
-            )
+        # Calcular el subtotal del producto
+        subtotal = producto.pre * cantidad
         
-        messages.success(request, f"Se ha agregado {cantidad} {producto.des} a la factura.")
+        # Guardar la cantidad y el subtotal en el producto
+        producto.cantidad = cantidad
+        producto.subtotal = subtotal
+        producto.en_carrito = True
+        producto.save()
         
+        # Redirigir al usuario de vuelta a la página del producto
         return redirect(request.META.get('HTTP_REFERER', 'producto'))
+    else:
+        return redirect('ir_inicio')
     
 def mostrar_carrito_productos(request):
-    factura_productos = FacturaProducto.objects.all()
-    total = sum(item.subtotal() for item in factura_productos)
-    total_en_palabras = convertir_precio_a_palabras(total)
-    productos = Producto.objects.all()
+    # Obtener los productos que están en el carrito pero no han sido facturados aún
+    productos_en_carrito = Producto.objects.filter(en_carrito=True)
+    subtotales = []
+    
+    # Calcular el subtotal de cada producto multiplicando el precio por la cantidad
+    for producto in productos_en_carrito:
+        subtotales.append(producto.subtotal)
 
-    return render(request, 'producto/carrito_productos.html', {'factura_productos': factura_productos, 'total': total, 'total_en_palabras': total_en_palabras,'fecha_actual': timezone.now(), 'productos': productos})
+    # Calcular el total de la factura y convertirlo a palabras
+    total = sum(subtotales)
+    total_en_palabras = convertir_precio_a_palabras(total)
+    
+    # Pasar los productos filtrados a la plantilla
+    return render(request, 'producto/carrito_productos.html', {
+        'factura_productos': productos_en_carrito,
+        'total': total,
+        'total_en_palabras': total_en_palabras,
+        'fecha_actual': timezone.now()
+    })
 
 def eliminar_producto_factura(request):
     if request.method == 'POST':
-        product_id = request.POST.get('product_id')
-        print("ID del producto:", product_id)  # Agrega esta línea para imprimir el valor del ID
-        try:
-            producto = Producto.objects.get(cod=product_id)
-            factura_productos = FacturaProducto.objects.filter(producto=producto)
-            if factura_productos.exists():
-                factura_productos.delete()
-                messages.success(request, f"Se han eliminado los productos {producto.des} de la factura.")
-            else:
-                messages.error(request, "Producto no encontrado en la factura.")
-        except Producto.DoesNotExist:
-            messages.error(request, "Producto no encontrado.")
+        product_cod = request.POST.get('product_cod')
+        print("ID DEL PRODUCTO",product_cod)
+        # Obtener el producto específico
+        producto = get_object_or_404(Producto, cod=product_cod)
+
+        
+        # Cambiar el estado del producto en el carrito a False y resetear la cantidad a 1
+        producto.en_carrito = False
+        producto.cantidad = 1
+        producto.save()
+        
+        messages.success(request, f"Se ha eliminado el producto {producto.des} de la factura.")
     
     return redirect('mostrar_carrito_productos')
 
 def eliminar_productos_factura(request):
+    
     if request.method == 'POST':
-        # Eliminar todos los productos de la factura
-        FacturaProducto.objects.all().delete()
+        # Actualizar el estado de los productos en el carrito a False
+ 
+        productos_en_carrito = Producto.objects.filter(en_carrito=True)
+        productos_en_carrito.update(en_carrito=False)
         
         # Redirigir de vuelta a la página de productos
         return redirect('producto')
@@ -604,7 +612,6 @@ def ingreso_stock_seleccionado(request):
     return redirect('producto')
 
 
-
 def registrar_factura(request):
     if request.method == 'POST':
         # Obtener datos del cliente
@@ -618,9 +625,7 @@ def registrar_factura(request):
         # Obtener los productos de la factura
         factura_productos = request.POST.getlist('producto')
         cantidades = request.POST.getlist('cantidad')
-
-        if not factura_productos or not cantidades:
-            return HttpResponseBadRequest('No se han proporcionado productos o cantidades')
+        subtotales = request.POST.getlist('subtotal')
 
         # Inicializar el total de la factura
         total_factura = 0
@@ -637,19 +642,26 @@ def registrar_factura(request):
         )
 
         # Crear un registro en FacturaProducto para cada producto en la factura
-        for prod_id, cantidad in zip(factura_productos, cantidades):
+        for prod_id, cantidad, subtotal in zip(factura_productos, cantidades, subtotales):
             producto_obj = Producto.objects.get(pk=prod_id)
-            cantidad_entero = int(cantidad)  # Convertir la cantidad a entero
-            
-            # Calcular el subtotal del producto y sumarlo al total de la factura
-            subtotal_producto = cantidad_entero * producto_obj.pre
-            total_factura += subtotal_producto
-            
+            cantidad_entero = int(cantidad)
+            subtotal_float = float(subtotal.replace(',', '.'))  # Reemplazar coma por punto para asegurar que sea un número flotante válido
+
+            # Crear un nuevo registro en FacturaProducto
             FacturaProducto.objects.create(
                 producto=producto_obj,
                 cantidad=cantidad_entero,
+                subtotal_calculado=subtotal_float,
                 factura=factura,
             )
+
+            # Calcular el subtotal del producto y sumarlo al total de la factura
+            total_factura += subtotal_float
+
+            # Actualizar el stock del producto
+            producto_obj.stock -= cantidad_entero
+            producto_obj.carrito = False  # Restablecer a carrito=False
+            producto_obj.save()
 
         # Asignar el total de la factura a la instancia de HistorialFactura
         factura.total = total_factura

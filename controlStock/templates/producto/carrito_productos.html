@@ -46,7 +46,7 @@
             <p><strong>Inicio de Actividades:</strong> 27/04/2004</p>
         </div>
     </div>
-    <button id="printButton" class="btn btn-primary">Imprimir Factura</button> 
+    <button id="printButton" class="btn btn-primary">Imprimir Factura</button>
     <!-- Información del cliente -->
 
     <hr> <!-- Línea divisoria -->
@@ -55,24 +55,33 @@
 
     <div>
 
-        <form action="{% url 'registrar_factura' %}" method="post">
+        <form id="formularioFactura" action="{% url 'registrar_factura' %}" method="post"
+            onsubmit="return verificarTablaProductosVacia();">
+            {% csrf_token %}
             {% csrf_token %}
             <!-- Información del cliente -->
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Cliente:</strong><input type="text" id="inputCliente" name="cliente" placeholder="Cliente"></p>
-                    <p><strong>Direccion:</strong><input type="text" id="inputDomicilio" name="domicilio" placeholder="Domicilio"></p>
-                    <p><strong>Ciudad:</strong><input type="text" id="inputCiudad" name="ciudad" placeholder="Ciudad"></p>
+                    <p><strong>Cliente:</strong><input type="text" id="inputCliente" name="cliente"
+                            placeholder="Cliente"></p>
+                    <p><strong>Direccion:</strong><input type="text" id="inputDomicilio" name="domicilio"
+                            placeholder="Domicilio"></p>
+                    <p><strong>Ciudad:</strong><input type="text" id="inputCiudad" name="ciudad" placeholder="Ciudad">
+                    </p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Condicion venta:</strong><input type="text" id="inputCondicionVenta" name="condicion_venta" placeholder="Condición de Venta"></p>
-                    <p><strong>Condicion Fiscal:</strong><input type="text" id="inputCondicionFiscal" name="condicion_fiscal" placeholder="Condición Fiscal"></p>
-                    <p><strong>Cuit/Dni:</strong><input type="text" id="inputCuitDni" name="cuit_dni" placeholder="CUIT/DNI"></p>
+                    <p><strong>Condicion venta:</strong><input type="text" id="inputCondicionVenta"
+                            name="condicion_venta" placeholder="Condición de Venta"></p>
+                    <p><strong>Condicion Fiscal:</strong><input type="text" id="inputCondicionFiscal"
+                            name="condicion_fiscal" placeholder="Condición Fiscal"></p>
+                    <p><strong>Cuit/Dni:</strong><input type="text" id="inputCuitDni" name="cuit_dni"
+                            placeholder="CUIT/DNI"></p>
                 </div>
             </div>
 
             <hr>
 
+            <!-- Tabla de productos de la factura -->
             <!-- Tabla de productos de la factura -->
             <table class="table">
                 <!-- Encabezados de la tabla -->
@@ -82,37 +91,30 @@
                         <th>Descripción</th>
                         <th>Cantidad</th>
                         <th>Precio Unitario</th>
-                        <th>Importe</th>
-  
+                        <th>Subtotal</th>
+                        <th>Acciones</th> <!-- Agregué esta columna para botones de acción -->
                     </tr>
                 </thead>
                 <!-- Cuerpo de la tabla -->
                 <tbody>
-                    {% for item in factura_productos %}
+                    {% for producto in factura_productos %}
                     <tr>
-                        <td>{{ item.producto.cod }}</td>
-                        <td>{{ item.producto.des }}</td>
-                        <td>{{ item.cantidad }}</td>
-                        <td>{{ item.producto.pre|floatformat:2 }}</td>
+                        <td>{{ producto.cod }}</td>
+                        <td>{{ producto.des }}</td>
+                        <td>{{ producto.cantidad }}</td> <!-- Si deseas mostrar el stock -->
+                        <td>{{ precio|floatformat:2 }}</td>
+                        <td>{{ producto.subtotal|floatformat:2 }}</td>
                         <!-- Input oculto para enviar el ID del producto -->
-                        <input type="hidden" name="producto" value="{{ item.producto.id_pd }}">
+                        <input type="hidden" name="producto" value="{{ producto.id_pd }}">
                         <!-- Input para enviar la cantidad del producto -->
-                        <input type="hidden" name="cantidad" value="{{ item.cantidad }}">
-                        <td>{{ item.subtotal|floatformat:2 }}</td>
-                        <td>
-                            <div class="btn-group">
-                                <form action="{% url 'eliminar_producto_factura' %}" method="post">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="product_id" value="{{ item.producto.cod }}">
-                                    <!-- Cambia el nombre del campo a product_cod -->
-                                    <button id="noprint" type="submit" class="btn btn-danger">Quitar</button>
-                                </form>
-                            </div>
-                        </td>
+                        <input type="hidden" name="cantidad" value="{{ producto.cantidad }}">
+                        <!-- Input para enviar el subtotal del producto -->
+                        <input type="hidden" name="subtotal" value="{{ producto.subtotal }}">
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
             <hr>
             <div>
                 <p>{{ total_en_palabras }} - <strong>Total ARS: {{ total|floatformat:2 }}</strong></p>
@@ -120,21 +122,21 @@
             <hr>
 
             <!-- Botón para enviar el formulario -->
+            <div class="btn-group">
 
+                <button type="submit" class="btn btn-success">Registrar Factura</button>
+
+            </div>
         </form>
-        <div class="btn-group">
-
-            <button type="submit" class="btn btn-success">Registrar Factura</button>
-           
-        </div>
     </div>
 </div>
+<br>
 <div class="btn-group">
-<a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
-<form action="{% url 'eliminar_productos_factura' %}" method="post">
-    {% csrf_token %}
-    <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
-</form>
+    <a href="{% url 'producto' %}" class="btn btn-primary">Regresar</a>
+    <form action="{% url 'eliminar_productos_factura' %}" method="post">
+        {% csrf_token %}
+        <button id="noprint" type="submit" class="btn btn-danger">Eliminar Productos de la Factura</button>
+    </form>
 </div>
 
 <!-- Modal -->
@@ -234,6 +236,24 @@
         var myModal = new bootstrap.Modal(document.getElementById('ModalCliente'));
         myModal.hide();
     };
+</script>
+
+<script>
+    // Función para verificar si la tabla de productos está vacía
+    function verificarTablaProductosVacia() {
+        // Obtener la tabla de productos
+        var tablaProductos = document.getElementById('tablaProductos');
+
+        // Verificar si la tabla tiene filas (productos)
+        if (tablaProductos.rows.length <= 1) { // La condición <= 1 es para considerar también el encabezado de la tabla
+            // Si la tabla está vacía, cancelar el envío del formulario
+            alert('Debe agregar al menos un producto antes de registrar la factura.');
+            return false;
+        }
+
+        // Si la tabla no está vacía, permitir el envío del formulario
+        return true;
+    }
 </script>
 
 
