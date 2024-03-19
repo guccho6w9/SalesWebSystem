@@ -442,6 +442,52 @@ def actualizar_productos_seleccionados(request):
     return JsonResponse({'error': 'Solicitud no válida.'}, status=400)
 
 
+def ajustar_todos_precios(request):
+    if request.method == 'POST':
+        porcentaje = request.POST.get('porcentaje')
+        try:
+            porcentaje = float(porcentaje)
+            # Guardar los precios anteriores antes de ajustarlos
+            productos = Producto.objects.all()
+            precios_anteriores = {producto.id_pd: producto.pre for producto in productos}
+            
+            # Ajustar los precios utilizando update
+            Producto.objects.update(pre=F('pre') * (1 + porcentaje / 100))
+            
+            # Guardar los cambios en el historial
+            for producto_id, precio_anterior in precios_anteriores.items():
+                producto_actualizado = Producto.objects.get(id_pd=producto_id)
+                HistorialProducto.objects.create(
+                    producto=producto_actualizado,
+                    cod_anterior=producto_actualizado.cod,
+                    nombre_anterior=producto_actualizado.des,
+                    id_anterior=producto_actualizado.id_pd,
+                    precio_anterior=precio_anterior,
+                    precio_actualizado=producto_actualizado.pre,
+                    fecha_cambio=timezone.now()
+                )
+            
+            messages.success(request, 'Se ajustaron los precios de todos los productos correctamente.')
+        except ValueError:
+            messages.error(request, 'El porcentaje debe ser un número válido.')
+        return redirect('producto')  # Redirige a la página de productos
+    return render(request, 'listar_productos_seleccionados.html')
+
+def ingresar_stock_todos_productos(request):
+    if request.method == 'POST':
+        cantidad = request.POST.get('cantidad')
+        try:
+            cantidad = int(cantidad)
+            productos = Producto.objects.all()
+            for producto in productos:
+                producto.stock += cantidad
+                producto.save()
+            messages.success(request, 'Se ingresó stock a todos los productos correctamente.')
+        except ValueError:
+            messages.error(request, 'La cantidad debe ser un número entero válido.')
+        return redirect('producto')  # Redirige a la página de productos
+    return render(request, 'listar_productos_seleccionados.html')  # Cambia 'tu_template.html' por el nombre de tu template
+
 def agregar_producto_facturacion(request):
     if request.method == 'POST':
         product_id = request.POST.get('product_id')
@@ -666,6 +712,9 @@ def registrar_factura(request):
         # Asignar el total de la factura a la instancia de HistorialFactura
         factura.total = total_factura
         factura.save()
+        productos_en_carrito = Producto.objects.filter(en_carrito=True)
+        productos_en_carrito.update(en_carrito=False)
+        
 
         # Redirigir a la página de historial de facturas
         return redirect('ir_historialfactura')

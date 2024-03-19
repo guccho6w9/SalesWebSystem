@@ -38,8 +38,8 @@
                     {% endif %}
                     <td>{{ producto.producto.des }}</td>
                     <td>{{ producto.cantidad }}</td>
-                    <td>{{ producto.producto.pre }}</td>
-                    <td>{{ producto.subtotal }}</td>
+                    <td>{{ producto.producto.pre|floatformat:2 }}</td>
+                    <td>{{ producto.subtotal|floatformat:2 }}</td>
                 </tr>
                 {% endfor %}
                 <tr>

@@ -91,8 +91,7 @@
                         <th>Descripción</th>
                         <th>Cantidad</th>
                         <th>Precio Unitario</th>
-                        <th>Subtotal</th>
-                        <th>Acciones</th> <!-- Agregué esta columna para botones de acción -->
+                        <th>Subtotal</th> <!-- Agregué esta columna para botones de acción -->
                     </tr>
                 </thead>
                 <!-- Cuerpo de la tabla -->
@@ -102,7 +101,7 @@
                         <td>{{ producto.cod }}</td>
                         <td>{{ producto.des }}</td>
                         <td>{{ producto.cantidad }}</td> <!-- Si deseas mostrar el stock -->
-                        <td>{{ precio|floatformat:2 }}</td>
+                        <td>{{ producto.pre|floatformat:2 }}</td>
                         <td>{{ producto.subtotal|floatformat:2 }}</td>
                         <!-- Input oculto para enviar el ID del producto -->
                         <input type="hidden" name="producto" value="{{ producto.id_pd }}">

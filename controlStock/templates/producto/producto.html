@@ -577,11 +577,11 @@
 
         function updateSelectAllButtonState() {
             const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
-            selectAllButton.innerText = allChecked ? 'Deseleccionar Todos' : 'Seleccionar Todos';
+            selectAllButton.innerText = allChecked ? 'Deseleccionar pagina' : 'Seleccionar pagina';
         }
 
         selectAllButton.addEventListener('click', function () {
-            const checkValue = selectAllButton.innerText === 'Seleccionar Todos';
+            const checkValue = selectAllButton.innerText === 'Seleccionar pagina';
             checkboxes.forEach((checkbox) => {
                 checkbox.checked = checkValue;
             });
