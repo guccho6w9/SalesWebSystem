@@ -10,42 +10,53 @@
             <h2>Edición de datos</h2>
         </div>
         <div class="scroll-box">
-        <div class="card bg-whitesmoke borde"> <!--vidrio-blur-->
-            <div class="card-body">
-                <form action="{% url 'editarProducto' %}" method="POST">{% csrf_token %}
-                    <div class="form-group" hidden>
-                        <input type="number" id="id_pd" name="id_pd" class="form-control-plaintext text-center" value="{{producto.id_pd}}" readonly>
-                    </div>
-                    <div class="form-group mb-1">
-                        <p><strong>Codigo:</strong><input type="text" autocomplete="off" id="cod" name="cod" class="form-control" value="{{producto.cod}}" placeholder="Codigo" minlength="2" maxlength="15" required></p>
-                    </div>
-                    <div class="form-group mb-1">
-                        <p><strong>Descripcion:</strong><input type="text" autocomplete="off" id="des" name="des" class="form-control" value="{{producto.des}}" placeholder="Descripcion" minlength="2" maxlength="70" required></p>
-                    </div>
-                    <div class="form-group mb-1">
-                        <p><strong>Precio:</strong><input type="number" autocomplete="off" id="pre" name="pre" class="form-control" value="{{producto.pre}}" placeholder="{{producto.pre}}" required></p>
-                    </div>
-                    <div class="form-group mb-1">
-                        <p><strong>Stock:</strong><input type="number" autocomplete="off" id="stock" name="stock" class="form-control" value="{{producto.stock}}" placeholder="Stock" required></p>
-                    </div>
-                   
-                    <!--BOTONES-->
-                    <div class="d-grid gap-2 py-3">
-                        <button type="submit" class="btn btn-success border border-black rounded">
-                            💾 Guardar cambios
-                        </button>
-                    </div>
-                    <div class="text-center">
-                        <a class="btn btn-dark mt-3" href="{% url 'producto' %}">⬅️ Descartar cambios y regresar</a>
-                    </div>
-                </form>
+            <div class="card bg-whitesmoke borde"> <!--vidrio-blur-->
+                <div class="card-body">
+                    <form action="{% url 'editarProducto' %}" method="POST">{% csrf_token %}
+                        <div class="form-group" hidden>
+                            <input type="number" id="id_pd" name="id_pd" class="form-control-plaintext text-center"
+                                value="{{producto.id_pd}}" readonly>
+                        </div>
+                        <div class="form-group mb-1">
+                            <p><strong>Codigo:</strong><input type="text" autocomplete="off" id="cod" name="cod"
+                                    class="form-control" value="{{producto.cod}}" placeholder="Codigo" minlength="2"
+                                    maxlength="15" required></p>
+                        </div>
+                        <div class="form-group mb-1">
+                            <p><strong>Descripcion:</strong><input type="text" autocomplete="off" id="des" name="des"
+                                    class="form-control" value="{{producto.des}}" placeholder="Descripcion"
+                                    minlength="2" maxlength="70" required></p>
+                        </div>
+                        <div class="form-group mb-1">
+                            <p><strong>Precio:</strong>
+                                <input type="number" autocomplete="off" id="pre" name="pre" class="form-control"
+                                    value="{{producto.pre|floatformat:2}}" step="0.01" placeholder="{{producto.pre|floatformat:2}}"
+                                    oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                                    maxlength="15" required>
+
+                        </div>
+                        <div class="form-group mb-1">
+                            <p><strong>Stock:</strong><input type="number" autocomplete="off" id="stock" name="stock"
+                                    class="form-control" value="{{producto.stock}}" placeholder="Stock" required></p>
+                        </div>
+
+                        <!--BOTONES-->
+                        <div class="d-grid gap-2 py-3">
+                            <button type="submit" class="btn btn-success border border-black rounded">
+                                💾 Guardar cambios
+                            </button>
+                        </div>
+                        <div class="text-center">
+                            <a class="btn btn-dark mt-3" href="{% url 'producto' %}">⬅️ Descartar cambios y regresar</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
-    </div> <!--scroll-box-->
+        </div> <!--scroll-box-->
     </div>
     <script>
         // Habilitar edición cuando se hace clic en el campo de descripción
-        document.getElementById('des').addEventListener('click', function() {
+        document.getElementById('des').addEventListener('click', function () {
             this.removeAttribute('readonly');
         });
     </script>

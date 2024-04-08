@@ -1,4 +1,5 @@
 {% extends ".\base.html" %}
+{% load custom_filters %}
 
 {% block historial_content %}
 <h1>Historial de Facturas</h1>
@@ -6,49 +7,77 @@
     {% csrf_token %}
     <button type="submit" class="btn btn-danger">Borrar Historial</button>
 </form>
-{% for factura in facturas %}
-    {% if factura.productos.all %} <!-- Verificar si hay productos asociados a la factura -->
-    <div class="factura-box">
-        <h3>Registro #{{ forloop.counter }}</h3>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Nombre del Cliente</th>
-                    <th>Domicilio</th>
-                    <th>Ciudad</th>
-                    <th>Condición de Venta</th>
-                    <th>CUIT/DNI</th>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio/u</th>
-                    <th>SubTotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for producto in factura.productos.all %}
-                <tr>
-                    {% if forloop.first %} <!-- Mostrar los datos de la factura solo en la primera iteración -->
-                    <td rowspan="{{ factura.productos.count }}">{{ factura.fecha }}</td>
-                    <td rowspan="{{ factura.productos.count }}">{{ factura.nombre_cliente }}</td>
-                    <td rowspan="{{ factura.productos.count }}">{{ factura.domicilio }}</td>
-                    <td rowspan="{{ factura.productos.count }}">{{ factura.ciudad }}</td>
-                    <td rowspan="{{ factura.productos.count }}">{{ factura.condicion_venta }}</td>
-                    <td rowspan="{{ factura.productos.count }}">{{ factura.cuit_dni }}</td>
-                    {% endif %}
-                    <td>{{ producto.producto.des }}</td>
-                    <td>{{ producto.cantidad }}</td>
-                    <td>{{ producto.producto.pre|floatformat:2 }}</td>
-                    <td>{{ producto.subtotal|floatformat:2 }}</td>
-                </tr>
-                {% endfor %}
-                <tr>
-                    <td colspan="3"><strong>Total:</strong></td>
-                    <td>{{ factura.total }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+
+{% comment %} Calcular el contador de registros en función de la página {% endcomment %}
+{% with start_counter=page_obj.start_index %}
+{% for factura in page_obj %}
+
+{% if factura.productos.all %} <!-- Verificar si hay productos asociados a la factura -->
+<div class="factura-box">
+    <h3>Registro #{{ start_counter|add:forloop.counter0 }}</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Nombre del Cliente</th>
+                <th>Domicilio</th>
+                <th>Ciudad</th>
+                <th>Condición de Venta</th>
+                <th>CUIT/DNI</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio/u</th>
+                <th>SubTotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in factura.productos.all %}
+            <tr>
+                {% if forloop.first %} <!-- Mostrar los datos de la factura solo en la primera iteración -->
+                <td rowspan="{{ factura.productos.count }}">{{ factura.fecha }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.nombre_cliente }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.domicilio }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.ciudad }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.condicion_venta }}</td>
+                <td rowspan="{{ factura.productos.count }}">{{ factura.cuit_dni }}</td>
+                {% endif %}
+                <td>{{ producto.producto.des }}</td>
+                <td>{{ producto.cantidad }}</td>
+                <td>{{ producto.producto.pre|floatformat:2|add_dot_separator }}</td>
+                <td>{{ producto.subtotal|floatformat:2|add_dot_separator }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="3"><strong>Total:</strong></td>
+                <td>{{ factura.total }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
 {% endfor %}
+{% endwith %}
+
+
+<!-- Agregar paginación -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+        <a href="?page=1">&laquo; Primero</a>
+        <a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+        {% endif %}
+
+        <span class="current">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}">Último &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endif %}
 {% endblock %}

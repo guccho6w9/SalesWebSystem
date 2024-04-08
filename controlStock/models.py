@@ -8,7 +8,7 @@ class Producto(models.Model):
     cod = models.CharField(max_length=20)
     des = models.CharField(max_length=75, blank=False)
     stock = models.IntegerField(default=0)
-    pre = models.FloatField(blank=False)
+    pre = models.FloatField(default=0)
     aju = models.CharField(max_length=4, blank=False)
     ofe = models.CharField(max_length=4, blank=False)
     en_carrito = models.BooleanField(default=False)

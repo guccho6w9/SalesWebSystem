@@ -1,6 +1,8 @@
 {% extends ".\base.html" %}
-{% load humanize %} <!-- Agrega esta línea para cargar la etiqueta personalizada 'humanize' -->
-
+{% load humanize %}<!-- Agrega esta línea para cargar la etiqueta personalizada 'humanize' -->
+{% load i18n %}
+{% load l10n %}
+{% load custom_filters %}
 {% block title %}Generar Factura{% endblock %}
 
 {% block body %}
@@ -42,8 +44,7 @@
             <h4>&nbsp;</h4>
             <!-- Para alinear los encabezados de ambas columnas -->
             <p><strong>Fecha y hora:</strong> {{ fecha_actual }}</p>
-            <p><strong>CUIT:</strong> 20.43493493.9</p>
-            <p><strong>Inicio de Actividades:</strong> 27/04/2004</p>
+            <p><strong>CUIT:</strong> 27.22722383.4</p>
         </div>
     </div>
     <button id="printButton" class="btn btn-primary">Imprimir Factura</button>
@@ -62,22 +63,64 @@
             <!-- Información del cliente -->
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Cliente:</strong><input type="text" id="inputCliente" name="cliente"
-                            placeholder="Cliente"></p>
-                    <p><strong>Direccion:</strong><input type="text" id="inputDomicilio" name="domicilio"
-                            placeholder="Domicilio"></p>
-                    <p><strong>Ciudad:</strong><input type="text" id="inputCiudad" name="ciudad" placeholder="Ciudad">
-                    </p>
+                    <div class="row mb-3"> <!-- Envuelve cada par de etiqueta de nombre y campo en una fila -->
+                        <div class="col-md-4"> <!-- Controla el ancho de la columna que contiene las etiquetas de nombre -->
+                            <p><strong>Cliente:</strong></p>
+                        </div>
+                        <div class="col-md-8"> <!-- Controla el ancho de la columna que contiene los campos -->
+                            <input type="text" id="inputCliente" name="cliente" class="form-control" placeholder="Cliente">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p><strong>Direccion:</strong></p>
+                        </div>
+                        <div class="col-md-8">
+                            <input type="text" id="inputDomicilio" name="domicilio" class="form-control" placeholder="Domicilio">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p><strong>Ciudad:</strong></p>
+                        </div>
+                        <div class="col-md-8">
+                            <input type="text" id="inputCiudad" name="ciudad" class="form-control" placeholder="Ciudad">
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Condicion venta:</strong><input type="text" id="inputCondicionVenta"
-                            name="condicion_venta" placeholder="Condición de Venta"></p>
-                    <p><strong>Condicion Fiscal:</strong><input type="text" id="inputCondicionFiscal"
-                            name="condicion_fiscal" placeholder="Condición Fiscal"></p>
-                    <p><strong>Cuit/Dni:</strong><input type="text" id="inputCuitDni" name="cuit_dni"
-                            placeholder="CUIT/DNI"></p>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Condicion venta:</strong></p>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="inputCondicionVenta" name="condicion_venta" class="form-select" aria-label="Condición de Venta" required>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Tarjeta Débito">Tarjeta Débito</option>
+                                <option value="Tarjeta Crédito">Tarjeta Crédito</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p><strong>Condicion Fiscal:</strong></p>
+                        </div>
+                        <div class="col-md-8">
+                            <input type="text" id="inputCondicionFiscal" name="condicion_fiscal" class="form-control" placeholder="Condición Fiscal">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <p><strong>Cuit/Dni:</strong></p>
+                        </div>
+                        <div class="col-md-8">
+                            <input type="text" id="inputCuitDni" name="cuit_dni" class="form-control" placeholder="CUIT/DNI">
+                        </div>
+                    </div>
                 </div>
             </div>
+            
 
             <hr>
 
@@ -95,14 +138,19 @@
                     </tr>
                 </thead>
                 <!-- Cuerpo de la tabla -->
+
+
                 <tbody>
+
                     {% for producto in factura_productos %}
                     <tr>
                         <td>{{ producto.cod }}</td>
                         <td>{{ producto.des }}</td>
                         <td>{{ producto.cantidad }}</td> <!-- Si deseas mostrar el stock -->
-                        <td>{{ producto.pre|floatformat:2 }}</td>
-                        <td>{{ producto.subtotal|floatformat:2 }}</td>
+                        {% language 'es' %}
+                        <td>{{ producto.pre|floatformat:2|add_dot_separator }}</td>
+                        <td>{{ producto.subtotal|floatformat:2|add_dot_separator }}</td>
+                        {% endlanguage %}
                         <!-- Input oculto para enviar el ID del producto -->
                         <input type="hidden" name="producto" value="{{ producto.id_pd }}">
                         <!-- Input para enviar la cantidad del producto -->
@@ -111,13 +159,18 @@
                         <input type="hidden" name="subtotal" value="{{ producto.subtotal }}">
                     </tr>
                     {% endfor %}
+
                 </tbody>
+
             </table>
 
             <hr>
+
             <div>
-                <p>{{ total_en_palabras }} - <strong>Total ARS: {{ total|floatformat:2 }}</strong></p>
+                <p>{{ total_en_palabras }} - <strong>Total ARS: {{ total|floatformat:2|add_dot_separator }}</strong></p>
             </div>
+
+
             <hr>
 
             <!-- Botón para enviar el formulario -->

@@ -14,6 +14,10 @@ from django.template.loader import get_template
 from django.http import HttpResponseBadRequest
 from django.http import HttpResponseRedirect
 from collections import defaultdict
+from django.db import transaction
+from django import template
+
+register = template.Library()
 
 from django.urls import reverse
 
@@ -191,12 +195,10 @@ def editarProducto(request):
     return redirect('producto')  # Cambia 'producto' con el nombre correcto de tu URL de productos
 
 
-
-
+from django.db.models import Max
 
 def import_from_excel(request):
     if request.method == 'POST':
-
         try:
             excel_file = request.FILES['excel_file']
         except MultiValueDictKeyError:
@@ -211,15 +213,37 @@ def import_from_excel(request):
         # Procesar el archivo Excel con pandas
         try:
             df = pd.read_excel(excel_file)
+
+            # Reemplazar comas por puntos en columnas 'pre' y 'stock'
+            df['pre'] = df['pre'].astype(str).str.replace(',', '.')
+            df['stock'] = df['stock'].astype(str).str.replace(',', '.')
+
+            # Convertir 'pre' a números de punto flotante
+            df['pre'] = df['pre'].astype(float)
+            
+            # Convertir 'stock' a números enteros
+            df['stock'] = df['stock'].astype(float).fillna(0).astype(int)
+
             for index, row in df.iterrows():
-                # Redondear el valor del precio a dos decimales
-                pre = round(float(row['pre']), 2)
-                Producto.objects.create(
-                    cod=row['cod'],
-                    des=row['des'],
-                    pre=pre,
-                    stock=int(row.get('stock', 0))
-                )
+                # Verificar si ya existe un producto con el mismo código y descripción
+                productos = Producto.objects.filter(cod=row['cod'], des=row['des'])
+
+                # Si existen productos, seleccionar el de mayor precio y actualizarlo
+                if productos.exists():
+                    max_precio = productos.aggregate(Max('pre'))['pre__max']
+                    producto = productos.filter(pre=max_precio).first()
+                    producto.pre = row['pre']
+                    producto.stock = row['stock']
+                    producto.save()
+                else:
+                    # Si no existe, crear uno nuevo
+                    Producto.objects.create(
+                        cod=row['cod'],
+                        des=row['des'],
+                        pre=row['pre'],
+                        stock=row['stock']
+                    )
+
             messages.success(request, 'Importación exitosa.')
         except Exception as e:
             messages.error(request, f"Ocurrió un error al importar desde el archivo Excel: {e}")
@@ -228,7 +252,6 @@ def import_from_excel(request):
         return render(request, 'import_form.html')
 
     return render(request, 'import_form.html')
-
 
 def exportar_productos(request):
     # Lógica para exportar productos a un archivo Excel
@@ -245,7 +268,9 @@ def exportar_productos(request):
     # Agrega datos de productos a la hoja de cálculo
     productos = Producto.objects.all()
     for producto in productos:
-        ws.append([producto.cod, producto.des, producto.pre, producto.stock])
+        # Elimina el último carácter del código de producto
+        cod = producto.cod[:-1] if len(producto.cod) > 0 else producto.cod
+        ws.append([cod, producto.des, producto.pre, producto.stock])
 
     # Guarda el libro de trabajo en la respuesta
     wb.save(response)
@@ -450,10 +475,14 @@ def ajustar_todos_precios(request):
             # Guardar los precios anteriores antes de ajustarlos
             productos = Producto.objects.all()
             precios_anteriores = {producto.id_pd: producto.pre for producto in productos}
-            
-            # Ajustar los precios utilizando update
-            Producto.objects.update(pre=F('pre') * (1 + porcentaje / 100))
-            
+   
+            # Dividir los productos en lotes y ajustar los precios dentro de una transacción
+            with transaction.atomic():
+                for producto in productos.iterator(chunk_size=200):  # Dividir en lotes de 100 productos
+                    producto.pre *= (1 + porcentaje / 100)
+                    producto.save(update_fields=['pre']) 
+         
+                    
             # Guardar los cambios en el historial
             for producto_id, precio_anterior in precios_anteriores.items():
                 producto_actualizado = Producto.objects.get(id_pd=producto_id)
@@ -479,14 +508,22 @@ def ingresar_stock_todos_productos(request):
         try:
             cantidad = int(cantidad)
             productos = Producto.objects.all()
-            for producto in productos:
-                producto.stock += cantidad
-                producto.save()
+
+            # Dividir los productos en lotes más pequeños
+            chunk_size = 1000  # Tamaño del lote
+            for i in range(0, len(productos), chunk_size):
+                chunk = productos[i:i+chunk_size]
+
+                with transaction.atomic():  # Iniciar una transacción
+                    for producto in chunk:
+                        producto.stock += cantidad
+                        producto.save()
+
             messages.success(request, 'Se ingresó stock a todos los productos correctamente.')
         except ValueError:
             messages.error(request, 'La cantidad debe ser un número entero válido.')
         return redirect('producto')  # Redirige a la página de productos
-    return render(request, 'listar_productos_seleccionados.html')  # Cambia 'tu_template.html' por el nombre de tu template
+    return render(request, 'listar_productos_seleccionados.html') # Cambia 'tu_template.html' por el nombre de tu template
 
 def agregar_producto_facturacion(request):
     if request.method == 'POST':
@@ -506,7 +543,7 @@ def agregar_producto_facturacion(request):
         producto.subtotal = subtotal
         producto.en_carrito = True
         producto.save()
-        
+        messages.success(request, f"Se ha agregado {producto.cantidad} {producto.des} a la factura.")        
         # Redirigir al usuario de vuelta a la página del producto
         return redirect(request.META.get('HTTP_REFERER', 'producto'))
     else:
@@ -717,7 +754,7 @@ def registrar_factura(request):
         
 
         # Redirigir a la página de historial de facturas
-        return redirect('ir_historialfactura')
+        return redirect('historial_facturas')
     else:
         # Manejar el caso en el que no se reciba una solicitud POST correctamente
         return HttpResponseBadRequest('La solicitud debe ser de tipo POST')
@@ -741,3 +778,13 @@ def borrar_historial_facturas(request):
         # Borrar todos los registros del historial de facturas
         HistorialFactura.objects.all().delete()
         return HttpResponseRedirect(reverse('ir_historialfactura'))
+    
+def historial_facturas(request):
+    facturas_list = HistorialFactura.objects.all().order_by('fecha') 
+ # Obtener todas las facturas ordenadas por fecha
+    paginator = Paginator(facturas_list, 20)  # Mostrar 3 facturas por página
+
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'producto/historial_factura.html', {'page_obj': page_obj})

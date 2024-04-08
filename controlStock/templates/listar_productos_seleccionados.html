@@ -1,4 +1,6 @@
 {% extends ".\base.html" %}
+{% load humanize %}
+{% load custom_filters %}
 
 {% block title %}Productos Seleccionados{% endblock %}
 
@@ -171,7 +173,7 @@
         <tr>
             <td>{{ p.cod }}</td>
             <td>{{ p.des }}</td>
-            <td>{{ p.pre }}</td>
+            <td>{{ p.pre|floatformat:2|add_dot_separator }}</td>
             <td>{{ p.stock }}</td>
             <td>
                 <form method="post" action="{% url 'quitar_producto_seleccionado' %}">

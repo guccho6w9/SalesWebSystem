@@ -59,6 +59,7 @@ urlpatterns = [
     path('borrar_historial_facturas/', views.borrar_historial_facturas, name='borrar_historial_facturas'),
     path("ajustar_todos_precios/", views.ajustar_todos_precios, name="ajustar_todos_precios"),
     path("ingresar_stock_todos_productos/", views.ingresar_stock_todos_productos, name="ingresar_stock_todos_productos"),
+    path("historial_facturas/", views.historial_facturas, name="historial_facturas"),
  
  
     
