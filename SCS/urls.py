@@ -29,7 +29,7 @@ from django.contrib.auth.views import PasswordResetConfirmView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.inicio, name='inicio'),
+    path('', views.producto, name='inicio'),
     # PRODUCTO
     path('producto/', views.producto, name='producto'),
     path('registrar/producto/', views.registrarProducto, name='registrarProducto'),
