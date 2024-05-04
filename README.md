@@ -14,8 +14,8 @@ This is a web system that allows you to control prices, stock, and sales. It has
 ## How to use
 
 - Clone the repository.
-- Install the dependencies.
-- Run the development server.
+- Install the requirements.txt requirements or run instalar_dependencias.bat.
+- Run the django development server.
 - Open your web browser and go to 127.0.0.1:8000/producto/.
 
 ## Technologies
