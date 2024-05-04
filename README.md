@@ -11,14 +11,14 @@ This is a web system that allows you to control prices, stock, and sales. It has
 -Search for products in a search bar.
 -Sort products by description, price, or code.
 
-##How to use
+## How to use
 
 -Clone the repository.
 -Install the dependencies.
 -Run the development server.
 -Open your web browser and go to 127.0.0.1:8000/producto/.
 
-##Technologies
+## Technologies
 
 Front-end: HTML, CSS, JS, Bootstrap
 Back-end: Django, Python
